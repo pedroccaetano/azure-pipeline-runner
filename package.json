@@ -5,9 +5,9 @@
     "name": "Pedro Caetano",
     "email": "pedrohenriquedecaldascaetano@gmail.com"
   },
-  "publisher": "pedroccaetano",
+  "publisher": "PedroCaetano",
   "icon": "resources/icon.png",
-  "description": "Azure Pipeline Runner is a Visual Studio Code extension that allows you to interact with your Azure DevOps pipelines.",
+  "description": "VS Code extension for Azure DevOps pipelines.",
   "version": "0.0.1",
   "license": "MIT",
   "homepage": "https://github.com/your-username/azure-pipeline-runner#readme",
