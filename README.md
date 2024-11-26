@@ -27,7 +27,7 @@ This extension contributes the following settings:
 - `azurePipelineRunner.organization`: Azure DevOps organization name.
 - `azurePipelineRunner.pat`: Personal Access Token (PAT) for Azure DevOps.
 
-## Known Issues
+## TODO
 
 - Builds that are currently in progress are not listed.
 - The command `azurePipelineRunner.refreshPipeline` is not implemented yet.
