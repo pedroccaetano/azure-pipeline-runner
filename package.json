@@ -1,23 +1,138 @@
 {
   "name": "azure-pipeline-runner",
-  "displayName": "azure-pipeline-runner",
-  "description": "list and trigguer your azure pipelines",
+  "displayName": "Azure Pipeline Runner",
+  "author": {
+    "name": "Pedro Caetano",
+    "email": "pedrohenriquedecaldascaetano@gmail.com"
+  },
+  "publisher": "pedroccaetano",
+  "icon": "resources/icon.png",
+  "description": "Azure Pipeline Runner is a Visual Studio Code extension that allows you to interact with your Azure DevOps pipelines.",
   "version": "0.0.1",
+  "homepage": "https://github.com/your-username/azure-pipeline-runner#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pedroccaetano/azure-pipeline-runner.git"
+  },
+  "bugs": {
+    "url": "https://github.com/pedroccaetano/azure-pipeline-runner/issues"
+  },
   "engines": {
     "vscode": "^1.95.0"
   },
   "categories": [
+    "Azure",
+    "Visualization",
     "Other"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "onView:azurePipelineRunner.azurePipelineView",
+    "onCommand:azurePipelineRunner.showWelcome"
+  ],
   "main": "./out/extension.js",
   "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "azurePipelineRunner",
+          "title": "Azure Pipelines Runner",
+          "icon": "resources/icon.png"
+        }
+      ]
+    },
+    "views": {
+      "azurePipelineRunner": [
+        {
+          "id": "azurePipelineView",
+          "name": "Pipelines"
+        }
+      ]
+    },
     "commands": [
       {
-        "command": "azure-pipeline-runner.helloWorld",
-        "title": "Hello World"
+        "command": "azurePipelineRunner.refreshEntry",
+        "title": "Refresh Pipelines"
+      },
+      {
+        "command": "azurePipelineRunner.openPipeline",
+        "title": "Open Pipeline",
+        "icon": {
+          "light": "resources/light/eye.svg",
+          "dark": "resources/dark/eye.svg"
+        }
+      },
+      {
+        "command": "azurePipelineRunner.openBuild",
+        "title": "Open Build",
+        "icon": {
+          "light": "resources/light/eye.svg",
+          "dark": "resources/dark/eye.svg"
+        }
+      },
+      {
+        "command": "azurePipelineRunner.loadMoreBuilds",
+        "title": "Load More Builds",
+        "icon": {
+          "light": "resources/light/plus.svg",
+          "dark": "resources/dark/plus.svg"
+        }
+      },
+      {
+        "command": "azurePipelineRunner.refreshPipeline",
+        "title": "Refresh Pipeline",
+        "icon": {
+          "light": "resources/light/load.svg",
+          "dark": "resources/dark/load.svg"
+        }
       }
-    ]
+    ],
+    "menus": {
+      "view/item/context": [
+        {
+          "command": "azurePipelineRunner.openPipeline",
+          "when": "viewItem == pipeline",
+          "group": "inline"
+        },    
+        {
+          "command": "azurePipelineRunner.loadMoreBuilds",
+          "when": "viewItem == pipeline",
+          "group": "inline"
+        }, 
+        {
+          "command": "azurePipelineRunner.refreshPipeline",
+          "when": "viewItem == pipeline",
+          "group": "inline"
+        },
+        {
+          "command": "azurePipelineRunner.openBuild",
+          "when": "viewItem == build",
+          "group": "inline"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+      "view": "azurePipelineView",
+      "contents": "Welcome to Azure Pipeline Runner!\n\nTo get started, provide your Azure DevOps organization name and a Personal Access Token (PAT).\n\nThe PAT should have the following scopes:\n- Build (Read & Execute)\n- Code (Read)\n- Release (Read, Write, Execute, & Manage)\n\n[Configure](command:azurePipelineRunner.showWelcome)\n\n[Refresh](command:azurePipelineRunner.refreshEntry)",
+      "when": "azurePipelineRunner.showWelcome == false"
+      }
+    ],
+    "configuration": {
+      "type": "object",
+      "title": "Azure Pipeline Runner",
+      "properties": {
+        "azurePipelineRunner.organization": {
+          "type": "string",
+          "default": "",
+          "description": "Azure DevOps organization name"
+        },
+        "azurePipelineRunner.pat": {
+          "type": "string",
+          "default": "",
+          "description": "Personal Access Token (PAT) for Azure DevOps"
+        }
+      }
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
@@ -28,14 +143,17 @@
     "test": "vscode-test"
   },
   "devDependencies": {
-    "@types/vscode": "^1.95.0",
     "@types/mocha": "^10.0.9",
     "@types/node": "20.x",
+    "@types/vscode": "^1.95.0",
     "@typescript-eslint/eslint-plugin": "^8.10.0",
     "@typescript-eslint/parser": "^8.7.0",
-    "eslint": "^9.13.0",
-    "typescript": "^5.6.3",
     "@vscode/test-cli": "^0.0.10",
-    "@vscode/test-electron": "^2.4.1"
+    "@vscode/test-electron": "^2.4.1",
+    "eslint": "^9.13.0",
+    "typescript": "^5.6.3"
+  },
+  "dependencies": {
+    "axios": "^1.7.7"
   }
 }
