@@ -27,13 +27,32 @@ This extension contributes the following settings:
 - `azurePipelineRunner.organization`: Azure DevOps organization name.
 - `azurePipelineRunner.pat`: Personal Access Token (PAT) for Azure DevOps.
 
-## TODO
+```json
+{
+    "azurePipelineRunner.organization": "project-test",
+    "azurePipelineRunner.pat": "000000000",
+}
+```
 
-- Builds that are currently in progress are not listed.
-- The command `azurePipelineRunner.refreshPipeline` is not implemented yet.
-- The command `azurePipelineRunner.loadMoreBuilds` is not implemented yet.
+## Todo
+
+For more detailed project management, tracking, and planning, you can visit the project board on GitHub. This board provides an overview of the current tasks, progress, and future plans for the Azure Pipeline Runner extension.
+
+[Project Board](https://github.com/users/pedroccaetano/projects/2)
+
+## Collaboration
+
+We welcome contributions from the community! If you have any ideas, suggestions, or bug reports, please feel free to open an issue on GitHub. If you would like to contribute code, you can fork the repository, make your changes, and create a pull request.
+
+Feel free to contact us if you have any questions or need assistance. We appreciate your feedback and contributions!
+
 
 ## Release Notes
+
+### 0.0.2
+
+- Added a refresh button next to the title in the extension to allow users to easily refresh the extension. [#2](https://github.com/pedroccaetano/azure-pipeline-runner/issues/2)
+
 
 ### 0.0.1
 
