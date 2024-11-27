@@ -15,6 +15,10 @@ export class PipelineTreeDataProvider implements vscode.TreeDataProvider<Pipelin
     constructor() {}
 
     refresh(): void {
+        // TODO: Refactor into a more efficient way to refresh the tree, instead of resetting everything
+        this.pipelines = [];
+        this.buildsLoaded = {};
+        this.builds = {};
         this._onDidChangeTreeData.fire();
     }
 
