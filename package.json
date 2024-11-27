@@ -8,7 +8,7 @@
   "publisher": "PedroCaetano",
   "icon": "resources/icon.png",
   "description": "VS Code extension for Azure DevOps pipelines.",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "license": "MIT",
   "homepage": "https://github.com/your-username/azure-pipeline-runner#readme",
   "repository": {
@@ -52,7 +52,11 @@
     "commands": [
       {
         "command": "azurePipelineRunner.refreshEntry",
-        "title": "Refresh Pipelines"
+        "title": "Refresh",
+        "icon": {
+          "light": "resources/light/refresh.svg",
+          "dark": "resources/dark/refresh.svg"
+        }
       },
       {
         "command": "azurePipelineRunner.openPipeline",
@@ -88,6 +92,13 @@
       }
     ],
     "menus": {
+      "view/title": [
+        {
+          "command": "azurePipelineRunner.refreshEntry",
+          "when": "view == azurePipelineView",
+          "group": "navigation"
+        }
+      ],
       "view/item/context": [
         {
           "command": "azurePipelineRunner.openPipeline",
