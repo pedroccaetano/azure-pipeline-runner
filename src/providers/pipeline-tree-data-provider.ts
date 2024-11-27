@@ -15,6 +15,10 @@ export class PipelineTreeDataProvider implements vscode.TreeDataProvider<Pipelin
     constructor() {}
 
     refresh(): void {
+        // TODO: Refactor into a more efficient way to refresh the tree, instead of resetting everything
+        this.pipelines = [];
+        this.buildsLoaded = {};
+        this.builds = {};
         this._onDidChangeTreeData.fire();
     }
 
@@ -26,6 +30,7 @@ export class PipelineTreeDataProvider implements vscode.TreeDataProvider<Pipelin
         if (!element) {
             // Top-level: Projects
             const projects = await getProjects() || [];
+            console.log('project',projects);
             return projects.map(project => new PipelineItem(project.name, vscode.TreeItemCollapsibleState.Collapsed, 'project', undefined, undefined, project));
         } else if (element?.contextValue === 'project') {
             // Second-level: Pipelines or Folders
