@@ -30,7 +30,6 @@ export class PipelineTreeDataProvider implements vscode.TreeDataProvider<Pipelin
         if (!element) {
             // Top-level: Projects
             const projects = await getProjects() || [];
-            console.log('project',projects);
             return projects.map(project => new PipelineItem(project.name, vscode.TreeItemCollapsibleState.Collapsed, 'project', undefined, undefined, project));
         } else if (element?.contextValue === 'project') {
             // Second-level: Pipelines or Folders
