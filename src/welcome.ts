@@ -12,8 +12,6 @@ export async function showWelcome() {
         password: true
     });
 
-    console.log(organization, pat);
-
     if (organization && pat) {
         await vscode.workspace.getConfiguration().update('azurePipelineRunner.organization', organization, vscode.ConfigurationTarget.Global);
         await vscode.workspace.getConfiguration().update('azurePipelineRunner.pat', pat, vscode.ConfigurationTarget.Global);
