@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { Pipeline, Project } from '../types/types';
 import { PipelineTreeDataProvider } from '../providers/pipeline-tree-data-provider';
 import { Build } from '../types/builds';
+import { BuildTreeDataProvider } from '../providers/build-tree-data-provider';
 
 const openExternalLink = (url: string) => {
     if (!url) {
@@ -9,10 +10,9 @@ const openExternalLink = (url: string) => {
     } 
     vscode.env.openExternal(vscode.Uri.parse(url));
 }
-
-export function registerCommands(context: vscode.ExtensionContext, treeDataProvider: PipelineTreeDataProvider) {
+export function registerCommands(context: vscode.ExtensionContext, pipelineTreeDataProvider: PipelineTreeDataProvider, buildTreeDataProvider: BuildTreeDataProvider) {
     context.subscriptions.push(
-        vscode.commands.registerCommand('azurePipelineRunner.refreshEntry', () => treeDataProvider.refresh())
+        vscode.commands.registerCommand('azurePipelineRunner.refreshEntry', () => pipelineTreeDataProvider.refresh())
     );
 
     context.subscriptions.push(
@@ -33,16 +33,22 @@ export function registerCommands(context: vscode.ExtensionContext, treeDataProvi
             vscode.commands.executeCommand('workbench.action.openSettings', 'azurePipelineRunner');
         })
     );
-    
+
     context.subscriptions.push(
-        vscode.commands.registerCommand('azurePipelineRunner.refreshPipeline',  ({pipeline, project}: {pipeline: Pipeline, project: Project}) => {
-            vscode.window.showWarningMessage('Not implemented yet!');
+        vscode.commands.registerCommand('azurePipelineRunner.refreshBuilds',  async () => {
+            await buildTreeDataProvider.refreshBuilds();
         })
     );
 
     context.subscriptions.push(
-        vscode.commands.registerCommand('azurePipelineRunner.loadMoreBuilds', async ({pipeline, project}: {pipeline: Pipeline, project: Project}) => {
-           vscode.window.showWarningMessage('Not implemented yet!');
+        vscode.commands.registerCommand('azurePipelineRunner.loadMoreBuilds', async () => {
+            await buildTreeDataProvider.loadMoreBuilds();
+        })
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('azurePipelineRunner.loadBuilds', async ({pipeline, project}: {pipeline: Pipeline, project: Project}) => {
+            await buildTreeDataProvider.loadBuilds(pipeline, project);
         })
     );
 }

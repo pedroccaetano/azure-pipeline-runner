@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { getPipelines, getBuildsByDefinitionId, getProjects } from './pipeline-provider';
+import { getPipelines, getProjects } from '../utils/requests';
 import { Pipeline } from '../types/types';
 import { Build } from '../types/builds';
 import { PipelineItem } from './pipeline-item';
@@ -9,16 +9,11 @@ export class PipelineTreeDataProvider implements vscode.TreeDataProvider<Pipelin
     readonly onDidChangeTreeData: vscode.Event<PipelineItem | undefined | void> = this._onDidChangeTreeData.event;
 
     private pipelines: Pipeline[] = [];
-    private buildsLoaded: { [key: number]: number } = {};
-    private builds: { [key: number]: Build[] } = {};
 
     constructor() {}
 
     refresh(): void {
-        // TODO: Refactor into a more efficient way to refresh the tree, instead of resetting everything
         this.pipelines = [];
-        this.buildsLoaded = {};
-        this.builds = {};
         this._onDidChangeTreeData.fire();
     }
 
@@ -30,42 +25,28 @@ export class PipelineTreeDataProvider implements vscode.TreeDataProvider<Pipelin
         if (!element) {
             // Top-level: Projects
             const projects = await getProjects() || [];
-            return projects.map(project => new PipelineItem(project.name, vscode.TreeItemCollapsibleState.Collapsed, 'project', undefined, undefined, project));
+            return projects.map(project => new PipelineItem(project.name, vscode.TreeItemCollapsibleState.Collapsed, 'project', undefined, project));
         } else if (element?.contextValue === 'project') {
             // Second-level: Pipelines or Folders
             this.pipelines = await getPipelines(element?.project?.name as string) || [];
             const rootFolders = this.getRootFolders(this.pipelines);
             const rootPipelines = this.getRootPipelines(this.pipelines);
             const rootItems = [
-                ...rootFolders.map(folder => new PipelineItem(folder, vscode.TreeItemCollapsibleState.Collapsed, 'folder', undefined, undefined, element.project)),
-                ...rootPipelines.map(pipeline => new PipelineItem(pipeline.name, vscode.TreeItemCollapsibleState.Collapsed, 'pipeline', pipeline, undefined, element.project))
+                ...rootFolders.map(folder => new PipelineItem(folder, vscode.TreeItemCollapsibleState.Collapsed, 'folder', undefined, element.project)),
+                ...rootPipelines.map(pipeline => new PipelineItem(pipeline.name, vscode.TreeItemCollapsibleState.None, 'pipeline', pipeline, element.project))
             ];
             return rootItems;
         } else if (element?.contextValue === 'folder') {
             // Handle folder level
             const childItems = this.getChildItems(element.label);
-            return childItems.map(item => new PipelineItem(item.label, item.isFolder ? vscode.TreeItemCollapsibleState.Collapsed : vscode.TreeItemCollapsibleState.Collapsed, item.isFolder ? 'folder' : 'pipeline', item.pipeline, undefined, element.project));
+            return childItems.map(item => new PipelineItem(item.label, item.isFolder ? vscode.TreeItemCollapsibleState.Collapsed : vscode.TreeItemCollapsibleState.None, item.isFolder ? 'folder' : 'pipeline', item.pipeline, element.project));
         } else if (element?.contextValue === 'pipeline') {
-            // Third-level: Builds
-            const buildsLoaded = this.buildsLoaded[element.pipeline!.id] || 0;
-            const builds = await getBuildsByDefinitionId(element.project!.name, element.pipeline!.id, 5, buildsLoaded);
-            this.builds[element.pipeline!.id] = (this.builds[element.pipeline!.id] || []).concat(builds);
-            this.buildsLoaded[element.pipeline!.id] = buildsLoaded + builds.length;
-            const buildItems = this.builds[element.pipeline!.id].map(build => new PipelineItem(
-                build.commitMessage || build.triggerInfo?.['ci.message'] || build.buildNumber || build.status,
-                vscode.TreeItemCollapsibleState.None,
-                'build',
-                undefined,
-                [build],
-                element.project
-            ));
-
-            return buildItems;
+            vscode.commands.executeCommand('azurePipelineRunner.loadBuilds', { pipeline: element.pipeline, project: element.project });
+            return [];
         } else {
             return [];
         }
     }
-
     
     private getRootFolders(pipelines: Pipeline[]): string[] {
         const folders = pipelines
