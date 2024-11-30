@@ -118,6 +118,11 @@
           "command": "azurePipelineRunner.openPipeline",
           "when": "viewItem == pipeline",
           "group": "inline"
+        },
+        {
+          "command": "azurePipelineRunner.openBuild",
+          "when": "viewItem == build",
+          "group": "inline"
         }
       ]
     },

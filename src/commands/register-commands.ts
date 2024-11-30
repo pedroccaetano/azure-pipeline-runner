@@ -1,8 +1,8 @@
 import * as vscode from 'vscode';
 import { Pipeline, Project } from '../types/types';
-import { PipelineTreeDataProvider } from '../providers/pipeline-tree-data-provider';
+import { PipelineTreeDataProvider } from '../providers/pipeline/pipeline-tree-data-provider';
 import { Build } from '../types/builds';
-import { BuildTreeDataProvider } from '../providers/build-tree-data-provider';
+import { BuildTreeDataProvider } from '../providers/build/build-tree-data-provider';
 
 const openExternalLink = (url: string) => {
     if (!url) {

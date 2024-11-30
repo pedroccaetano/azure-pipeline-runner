@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
-import { Pipeline, Project } from '../types/types';
 import * as path from 'path';
+import { Pipeline, Project } from '../../types/types';
 
 export class PipelineItem extends vscode.TreeItem {
     constructor(
@@ -25,18 +25,18 @@ export class PipelineItem extends vscode.TreeItem {
     private getIconPath(): { light: string; dark: string } {
         if (this.contextValue === 'folder') {
             return {
-                light: path.join(__filename, '..', '..', '..', 'resources', 'light','folder.svg'),
-                dark: path.join(__filename, '..', '..', '..', 'resources', 'dark','folder.svg')
+                light: path.join(__filename, '..', '..', '..', '..', 'resources', 'light','folder.svg'),
+                dark: path.join(__filename, '..', '..', '..', '..', 'resources', 'dark','folder.svg')
             };
         } else if (this.contextValue === 'pipeline') {
             return {
-                light: path.join(__filename, '..', '..', '..',  'resources', 'pipeline.svg'),
-                dark: path.join(__filename, '..', '..',  '..', 'resources', 'pipeline.svg')
+                light: path.join(__filename, '..', '..', '..', '..',  'resources', 'pipeline.svg'),
+                dark: path.join(__filename, '..', '..',  '..','..',  'resources', 'pipeline.svg')
             };
         } else {
             return {
-                light: path.join(__filename, '..', '..', '..', 'resources', 'repo.svg'),
-                dark: path.join(__filename, '..', '..', '..', 'resources','repo.svg')
+                light: path.join(__filename, '..', '..', '..','..',  'resources', 'repo.svg'),
+                dark: path.join(__filename, '..', '..', '..','..',  'resources','repo.svg')
             };
         }
     }

@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
-import { getPipelines, getProjects } from '../utils/requests';
-import { Pipeline } from '../types/types';
-import { Build } from '../types/builds';
+import { getPipelines, getProjects } from '../../utils/requests';
+import { Pipeline } from '../../types/types';
+import { Build } from '../../types/builds';
 import { PipelineItem } from './pipeline-item';
 
 export class PipelineTreeDataProvider implements vscode.TreeDataProvider<PipelineItem> {

@@ -1,8 +1,8 @@
 import * as vscode from 'vscode';
-import { PipelineTreeDataProvider } from './providers/pipeline-tree-data-provider';
-import { registerCommands } from './commands/registerCommands';
+import { PipelineTreeDataProvider } from './providers/pipeline/pipeline-tree-data-provider';
+import { registerCommands } from './commands/register-commands';
 import { showWelcome } from './welcome';
-import { BuildTreeDataProvider } from './providers/build-tree-data-provider';
+import { BuildTreeDataProvider } from './providers/build/build-tree-data-provider';
 
 export function activate(context: vscode.ExtensionContext) {
     const pipelineTreeDataProvider = new PipelineTreeDataProvider();
