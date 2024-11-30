@@ -1,13 +1,18 @@
 import * as vscode from 'vscode';
-import { PipelineTreeDataProvider } from './providers/pipeline-tree-data-provider';
-import { registerCommands } from './commands/registerCommands';
+import { PipelineTreeDataProvider } from './providers/pipeline/pipeline-tree-data-provider';
+import { registerCommands } from './commands/register-commands';
 import { showWelcome } from './welcome';
+import { BuildTreeDataProvider } from './providers/build/build-tree-data-provider';
 
 export function activate(context: vscode.ExtensionContext) {
-    const treeDataProvider = new PipelineTreeDataProvider();
-    vscode.window.registerTreeDataProvider('azurePipelineView', treeDataProvider);
+    const pipelineTreeDataProvider = new PipelineTreeDataProvider();
+    const buildTreeDataProvider = new BuildTreeDataProvider();
+    
+    vscode.window.registerTreeDataProvider('azurePipelineView', pipelineTreeDataProvider);
+    vscode.window.registerTreeDataProvider('azurePipelineBuilds', buildTreeDataProvider);
 
-    registerCommands(context, treeDataProvider);
+    registerCommands(context, pipelineTreeDataProvider, buildTreeDataProvider);
+
 
     const organization = vscode.workspace.getConfiguration().get('azurePipelineRunner.organization');
     const pat = vscode.workspace.getConfiguration().get('azurePipelineRunner.pat');

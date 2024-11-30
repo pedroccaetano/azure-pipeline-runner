@@ -46,6 +46,10 @@
         {
           "id": "azurePipelineView",
           "name": "Pipelines"
+        },
+        {
+          "id": "azurePipelineBuilds",
+          "name": "Builds"
         }
       ]
     },
@@ -57,21 +61,29 @@
           "light": "resources/light/refresh.svg",
           "dark": "resources/dark/refresh.svg"
         }
+      }, 
+      {
+        "command": "azurePipelineRunner.refreshBuilds",
+        "title": "Refresh",
+        "icon": {
+          "light": "resources/light/refresh.svg",
+          "dark": "resources/dark/refresh.svg"
+        }
       },
       {
         "command": "azurePipelineRunner.openPipeline",
         "title": "Open Pipeline",
         "icon": {
-          "light": "resources/light/eye.svg",
-          "dark": "resources/dark/eye.svg"
+          "light": "resources/light/browser.svg",
+          "dark": "resources/dark/browser.svg"
         }
       },
       {
         "command": "azurePipelineRunner.openBuild",
         "title": "Open Build",
         "icon": {
-          "light": "resources/light/eye.svg",
-          "dark": "resources/dark/eye.svg"
+          "light": "resources/light/browser.svg",
+          "dark": "resources/dark/browser.svg"
         }
       },
       {
@@ -81,14 +93,6 @@
           "light": "resources/light/plus.svg",
           "dark": "resources/dark/plus.svg"
         }
-      },
-      {
-        "command": "azurePipelineRunner.refreshPipeline",
-        "title": "Refresh Pipeline",
-        "icon": {
-          "light": "resources/light/load.svg",
-          "dark": "resources/dark/load.svg"
-        }
       }
     ],
     "menus": {
@@ -97,21 +101,21 @@
           "command": "azurePipelineRunner.refreshEntry",
           "when": "view == azurePipelineView",
           "group": "navigation"
+        },
+        {
+          "command": "azurePipelineRunner.refreshBuilds",
+          "when": "view == azurePipelineBuilds",
+          "group": "navigation"
+        },
+        {
+          "command": "azurePipelineRunner.loadMoreBuilds",
+          "when": "view == azurePipelineBuilds",
+          "group": "navigation"
         }
       ],
       "view/item/context": [
         {
           "command": "azurePipelineRunner.openPipeline",
-          "when": "viewItem == pipeline",
-          "group": "inline"
-        },    
-        {
-          "command": "azurePipelineRunner.loadMoreBuilds",
-          "when": "viewItem == pipeline",
-          "group": "inline"
-        }, 
-        {
-          "command": "azurePipelineRunner.refreshPipeline",
           "when": "viewItem == pipeline",
           "group": "inline"
         },

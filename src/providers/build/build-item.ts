@@ -1,16 +1,16 @@
 import * as vscode from 'vscode';
-import { Pipeline, Project } from '../types/types';
-import * as path from 'path';
-import { Build } from '../types/builds';
+import { Build } from '../../types/builds';
+import { Pipeline, Project } from '../../types/types';
+import path from 'path';
 
-export class PipelineItem extends vscode.TreeItem {
+export class BuildItem extends vscode.TreeItem {
     constructor(
         public readonly label: string,
         public readonly collapsibleState: vscode.TreeItemCollapsibleState,
         public readonly contextValue: string,
-        public readonly pipeline?: Pipeline,
-        public builds?: Build[],
-        public readonly project?: Project
+        public readonly builds?: Build[],
+        public readonly project?: Project,
+        public readonly pipeline?: Pipeline
     ) {
         super(label, collapsibleState);
         this.iconPath = this.getIconPath();
@@ -18,17 +18,7 @@ export class PipelineItem extends vscode.TreeItem {
     }
 
     private getIconPath(): { light: string; dark: string } {
-        if (this.contextValue === 'folder') {
-            return {
-                light: path.join(__filename, '..', '..', '..', 'resources', 'light','folder.svg'),
-                dark: path.join(__filename, '..', '..', '..', 'resources', 'dark','folder.svg')
-            };
-        } else if (this.contextValue === 'pipeline') {
-            return {
-                light: path.join(__filename, '..', '..', '..',  'resources', 'pipeline.svg'),
-                dark: path.join(__filename, '..', '..',  '..', 'resources', 'pipeline.svg')
-            };
-        } else if (this.contextValue === 'build' && this.builds && this.builds.length > 0) {
+        if (this.contextValue === 'build' && this.builds && this.builds.length > 0) {
             const build = this.builds[0];
             let iconName = '';
             switch (build.result) {
@@ -49,13 +39,13 @@ export class PipelineItem extends vscode.TreeItem {
                     break;
             }
             return {
-                light: path.join(__filename, '..', '..','..', 'resources', iconName),
-                dark: path.join(__filename, '..','..', '..', 'resources', iconName)
+                light: path.join(__filename, '..', '..', '..','..', 'resources', iconName),
+                dark: path.join(__filename, '..', '..', '..','..',  'resources', iconName)
             };
         } else {
             return {
-                light: path.join(__filename, '..', '..', '..', 'resources', 'repo.svg'),
-                dark: path.join(__filename, '..', '..', '..', 'resources','repo.svg')
+                light: path.join(__filename, '..', '..', '..', '..', 'resources', 'repo.svg'),
+                dark: path.join(__filename, '..', '..', '..', '..', 'resources','repo.svg')
             };
         }
     }
@@ -71,7 +61,6 @@ export class PipelineItem extends vscode.TreeItem {
             markdown.appendMarkdown(`**Build Number**: ${build.buildNumber}\n\n`);
             markdown.appendMarkdown(`**Status**: ${build.status}\n\n`);
             markdown.appendMarkdown(`**Result**: ${build.result}\n\n`);
-            const queueTime = new Date(build.queueTime);
             const startTime = new Date(build.startTime);
             const finishTime = new Date(build.finishTime);
             const totalTime = new Date(finishTime.getTime() - startTime.getTime());
@@ -96,7 +85,7 @@ export class PipelineItem extends vscode.TreeItem {
 
             if (build.requestedFor) {
                 const avatarUrl = build.requestedFor._links.avatar.href;
-                markdown.appendMarkdown(`**Requested By**: <img src="${avatarUrl}" width="16" height="16" style="vertical-align:middle;"/> ${build.requestedFor.displayName}\n\n`);
+                markdown.appendMarkdown(`**Requested By**: <img src="${avatarUrl}" width="16" height="16" /> ${build.requestedFor.displayName}\n\n`);
             }
 
             return markdown;
