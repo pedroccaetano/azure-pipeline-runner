@@ -35,6 +35,11 @@ export class BuildItem extends vscode.TreeItem {
                     iconName = 'partiallySucceeded.svg';
                     break;
                 default:
+                    if (build.status === 'inProgress') {
+                        iconName = 'clock.svg';
+                        break;
+                    }
+
                     iconName = '';
                     break;
             }
@@ -60,27 +65,34 @@ export class BuildItem extends vscode.TreeItem {
             markdown.appendMarkdown(`---\n`);
             markdown.appendMarkdown(`**Build Number**: ${build.buildNumber}\n\n`);
             markdown.appendMarkdown(`**Status**: ${build.status}\n\n`);
-            markdown.appendMarkdown(`**Result**: ${build.result}\n\n`);
+
+            if (build.result) {
+                markdown.appendMarkdown(`**Result**: ${build.result}\n\n`);
+            }
+
             const startTime = new Date(build.startTime);
-            const finishTime = new Date(build.finishTime);
-            const totalTime = new Date(finishTime.getTime() - startTime.getTime());
+            if (build.finishTime) {
+                const finishTime = new Date(build.finishTime);
+                const totalTime = new Date(finishTime.getTime() - startTime.getTime());
+    
+                const formatDuration = (duration: Date) => {
+                    const hours = Math.floor(duration.getTime() / 3600000);
+                    const minutes = Math.floor((duration.getTime() % 3600000) / 60000);
+                    const seconds = ((duration.getTime() % 60000) / 1000).toFixed(0);
+                    let formattedDuration = '';
+                    if (hours > 0) {
+                        formattedDuration += `${hours}h `;
+                    }
+                    if (minutes > 0 || hours > 0) {
+                        formattedDuration += `${minutes}m `;
+                    }
+                    formattedDuration += `${seconds}s`;
+                    return formattedDuration.trim();
+                };
 
-            const formatDuration = (duration: Date) => {
-                const hours = Math.floor(duration.getTime() / 3600000);
-                const minutes = Math.floor((duration.getTime() % 3600000) / 60000);
-                const seconds = ((duration.getTime() % 60000) / 1000).toFixed(0);
-                let formattedDuration = '';
-                if (hours > 0) {
-                    formattedDuration += `${hours}h `;
-                }
-                if (minutes > 0 || hours > 0) {
-                    formattedDuration += `${minutes}m `;
-                }
-                formattedDuration += `${seconds}s`;
-                return formattedDuration.trim();
-            };
+                markdown.appendMarkdown(`**Durantion**: ${formatDuration(totalTime)}\n\n`);
+            }
 
-            markdown.appendMarkdown(`**Durantion**: ${formatDuration(totalTime)}\n\n`);
             markdown.appendMarkdown(`---\n`);
 
             if (build.requestedFor) {
