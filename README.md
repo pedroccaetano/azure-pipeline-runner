@@ -51,8 +51,8 @@ Feel free to contact us if you have any questions or need assistance. We appreci
 ### 0.0.4
 
 - Display Build Stages and add stage Log [#10](https://github.com/pedroccaetano/azure-pipeline-runner/pull/11)
-- Introduced a dedicated view for displaying pipeline stages.
-- Added an icon to easily open the Azure Pipeline log inside VS Code.
+  - Introduced a dedicated view for displaying pipeline stages.
+  - Added an icon to easily open the Azure Pipeline log inside VS Code.
 
 ### 0.0.3
 
