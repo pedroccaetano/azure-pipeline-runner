@@ -49,7 +49,7 @@ Feel free to contact us if you have any questions or need assistance. We appreci
 
 ## Release Notes
 
-### 0.0.2
+### 0.0.3
 - Create a view for displaying Builds from pipelines [#5](https://github.com/pedroccaetano/azure-pipeline-runner/issues/5)
     - Introduced a dedicated view for displaying pipeline builds.
     - Added functionality to load more builds and refresh the view to get the latest builds.
