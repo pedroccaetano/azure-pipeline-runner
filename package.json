@@ -45,11 +45,16 @@
       "azurePipelineRunner": [
         {
           "id": "azurePipelineView",
-          "name": "Pipelines"
+          "name": "Pipelines",
+          "when": "true"
         },
         {
           "id": "azurePipelineBuilds",
           "name": "Builds"
+        },
+        {
+          "id": "azurePipelineStages",
+          "name": "Stages"
         }
       ]
     },
@@ -61,7 +66,7 @@
           "light": "resources/light/refresh.svg",
           "dark": "resources/dark/refresh.svg"
         }
-      }, 
+      },
       {
         "command": "azurePipelineRunner.refreshBuilds",
         "title": "Refresh",
@@ -84,6 +89,22 @@
         "icon": {
           "light": "resources/light/browser.svg",
           "dark": "resources/dark/browser.svg"
+        }
+      },
+      {
+        "command": "azurePipelineRunner.openStage",
+        "title": "Open Build",
+        "icon": {
+          "light": "resources/light/browser.svg",
+          "dark": "resources/dark/browser.svg"
+        }
+      },
+      {
+        "command": "azurePipelineRunner.openStageLog",
+        "title": "Open Build",
+        "icon": {
+          "light": "resources/light/logs.svg",
+          "dark": "resources/dark/logs.svg"
         }
       },
       {
@@ -123,14 +144,24 @@
           "command": "azurePipelineRunner.openBuild",
           "when": "viewItem == build",
           "group": "inline"
+        },
+        {
+          "command": "azurePipelineRunner.openStage",
+          "when": "viewItem == stage",
+          "group": "inline"
+        },
+        {
+          "command": "azurePipelineRunner.openStageLog",
+          "when": "viewItem == stage",
+          "group": "inline"
         }
       ]
     },
     "viewsWelcome": [
       {
-      "view": "azurePipelineView",
-      "contents": "Welcome to Azure Pipeline Runner!\n\nTo get started, provide your Azure DevOps organization name and a Personal Access Token (PAT).\n\nThe PAT should have the following scopes:\n- Build (Read & Execute)\n- Code (Read)\n- Release (Read, Write, Execute, & Manage)\n\n[Configure](command:azurePipelineRunner.showWelcome)\n\n[Refresh](command:azurePipelineRunner.refreshEntry)",
-      "when": "azurePipelineRunner.showWelcome == false"
+        "view": "azurePipelineView",
+        "contents": "Welcome to Azure Pipeline Runner!\n\nTo get started, provide your Azure DevOps organization name and a Personal Access Token (PAT).\n\nThe PAT should have the following scopes:\n- Build (Read & Execute)\n- Code (Read)\n- Release (Read, Write, Execute, & Manage)\n\n[Configure](command:azurePipelineRunner.showWelcome)\n\n[Refresh](command:azurePipelineRunner.refreshEntry)",
+        "when": "azurePipelineRunner.showWelcome == false"
       }
     ],
     "configuration": {
