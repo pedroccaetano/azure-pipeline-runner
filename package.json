@@ -1,6 +1,6 @@
 {
-  "name": "azure-pipeline-runner",
-  "displayName": "Azure Pipeline Runner",
+  "name": "azure-pipelines-runner",
+  "displayName": "Azure Pipelines Runner",
   "author": {
     "name": "Pedro Caetano",
     "email": "pedrohenriquedecaldascaetano@gmail.com"
@@ -8,7 +8,7 @@
   "publisher": "PedroCaetano",
   "icon": "resources/icon.png",
   "description": "Azure DevOps pipelines and builds in your VS Code",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "license": "MIT",
   "homepage": "https://github.com/your-username/azure-pipeline-runner#readme",
   "repository": {
