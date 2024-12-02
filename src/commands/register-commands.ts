@@ -87,7 +87,9 @@ export function registerCommands(
           }
 
           const logContent = await getStageLog(url);
-          const formattedLog = logContent.value.join("\n");
+          const formattedLog = logContent.value
+            .map((line) => line.slice(29))
+            .join("\n");
           const document = await vscode.workspace.openTextDocument({
             content: formattedLog,
             language: "plaintext",
