@@ -27,22 +27,22 @@
     "Other"
   ],
   "activationEvents": [
-    "onView:azurePipelineRunner.azurePipelineView",
-    "onCommand:azurePipelineRunner.showWelcome"
+    "onView:azurePipelinesRunner.azurePipelineView",
+    "onCommand:azurePipelinesRunner.showWelcome"
   ],
   "main": "./out/extension.js",
   "contributes": {
     "viewsContainers": {
       "activitybar": [
         {
-          "id": "azurePipelineRunner",
+          "id": "azurePipelinesRunner",
           "title": "Azure Pipelines Runner",
           "icon": "resources/icon.png"
         }
       ]
     },
     "views": {
-      "azurePipelineRunner": [
+      "azurePipelinesRunner": [
         {
           "id": "azurePipelineView",
           "name": "Pipelines",
@@ -60,7 +60,7 @@
     },
     "commands": [
       {
-        "command": "azurePipelineRunner.refreshEntry",
+        "command": "azurePipelinesRunner.refreshEntry",
         "title": "Refresh",
         "icon": {
           "light": "resources/light/refresh.svg",
@@ -68,7 +68,7 @@
         }
       },
       {
-        "command": "azurePipelineRunner.refreshBuilds",
+        "command": "azurePipelinesRunner.refreshBuilds",
         "title": "Refresh",
         "icon": {
           "light": "resources/light/refresh.svg",
@@ -76,7 +76,7 @@
         }
       },
       {
-        "command": "azurePipelineRunner.openPipeline",
+        "command": "azurePipelinesRunner.openPipeline",
         "title": "Open Pipeline",
         "icon": {
           "light": "resources/light/browser.svg",
@@ -84,7 +84,7 @@
         }
       },
       {
-        "command": "azurePipelineRunner.openBuild",
+        "command": "azurePipelinesRunner.openBuild",
         "title": "Open Build",
         "icon": {
           "light": "resources/light/browser.svg",
@@ -92,7 +92,7 @@
         }
       },
       {
-        "command": "azurePipelineRunner.openStage",
+        "command": "azurePipelinesRunner.openStage",
         "title": "Open Build",
         "icon": {
           "light": "resources/light/browser.svg",
@@ -100,7 +100,7 @@
         }
       },
       {
-        "command": "azurePipelineRunner.openStageLog",
+        "command": "azurePipelinesRunner.openStageLog",
         "title": "Open Build",
         "icon": {
           "light": "resources/light/logs.svg",
@@ -108,7 +108,7 @@
         }
       },
       {
-        "command": "azurePipelineRunner.loadMoreBuilds",
+        "command": "azurePipelinesRunner.loadMoreBuilds",
         "title": "Load More Builds",
         "icon": {
           "light": "resources/light/plus.svg",
@@ -119,39 +119,39 @@
     "menus": {
       "view/title": [
         {
-          "command": "azurePipelineRunner.refreshEntry",
+          "command": "azurePipelinesRunner.refreshEntry",
           "when": "view == azurePipelineView",
           "group": "navigation"
         },
         {
-          "command": "azurePipelineRunner.refreshBuilds",
+          "command": "azurePipelinesRunner.refreshBuilds",
           "when": "view == azurePipelineBuilds",
           "group": "navigation"
         },
         {
-          "command": "azurePipelineRunner.loadMoreBuilds",
+          "command": "azurePipelinesRunner.loadMoreBuilds",
           "when": "view == azurePipelineBuilds",
           "group": "navigation"
         }
       ],
       "view/item/context": [
         {
-          "command": "azurePipelineRunner.openPipeline",
+          "command": "azurePipelinesRunner.openPipeline",
           "when": "viewItem == pipeline",
           "group": "inline"
         },
         {
-          "command": "azurePipelineRunner.openBuild",
+          "command": "azurePipelinesRunner.openBuild",
           "when": "viewItem == build",
           "group": "inline"
         },
         {
-          "command": "azurePipelineRunner.openStage",
+          "command": "azurePipelinesRunner.openStage",
           "when": "viewItem == stage",
           "group": "inline"
         },
         {
-          "command": "azurePipelineRunner.openStageLog",
+          "command": "azurePipelinesRunner.openStageLog",
           "when": "viewItem == stage",
           "group": "inline"
         }
@@ -160,20 +160,20 @@
     "viewsWelcome": [
       {
         "view": "azurePipelineView",
-        "contents": "Welcome to Azure Pipeline Runner!\n\nTo get started, provide your Azure DevOps organization name and a Personal Access Token (PAT).\n\nThe PAT should have the following scopes:\n- Build (Read & Execute)\n- Code (Read)\n- Release (Read, Write, Execute, & Manage)\n\n[Configure](command:azurePipelineRunner.showWelcome)\n\n[Refresh](command:azurePipelineRunner.refreshEntry)",
-        "when": "azurePipelineRunner.showWelcome == false"
+        "contents": "Welcome to Azure Pipelines Runner!\n\nTo get started, provide your Azure DevOps organization name and a Personal Access Token (PAT).\n\nThe PAT should have the following scopes:\n- Build (Read & Execute)\n- Code (Read)\n- Release (Read, Write, Execute, & Manage)\n\n[Configure](command:azurePipelinesRunner.showWelcome)\n\n[Refresh](command:azurePipelinesRunner.refreshEntry)",
+        "when": "azurePipelinesRunner.showWelcome == false"
       }
     ],
     "configuration": {
       "type": "object",
-      "title": "Azure Pipeline Runner",
+      "title": "Azure Pipelines Runner",
       "properties": {
-        "azurePipelineRunner.organization": {
+        "azurePipelinesRunner.organization": {
           "type": "string",
           "default": "",
           "description": "Azure DevOps organization name"
         },
-        "azurePipelineRunner.pat": {
+        "azurePipelinesRunner.pat": {
           "type": "string",
           "default": "",
           "description": "Personal Access Token (PAT) for Azure DevOps"

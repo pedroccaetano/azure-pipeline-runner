@@ -19,7 +19,7 @@ export class BuildItem extends vscode.TreeItem {
 
     if (contextValue === "build" && builds && builds.length > 0) {
       this.command = {
-        command: "azurePipelineRunner.loadStages",
+        command: "azurePipelinesRunner.loadStages",
         title: "Load Stages",
         arguments: [{ builds, project }],
       };

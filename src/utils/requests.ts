@@ -12,10 +12,10 @@ import { BuildTimeline } from "../types/stages";
 export async function getConfiguration() {
   const pat = (await vscode.workspace
     .getConfiguration()
-    .get("azurePipelineRunner.pat")) as string;
-  const organization = await vscode.workspace
+    .get("azurePipelinesRunner.pat")) as string;
+  const organization = (await vscode.workspace
     .getConfiguration()
-    .get("azurePipelineRunner.organization");
+    .get("azurePipelinesRunner.organization")) as string;
 
   return { pat, organization };
 }

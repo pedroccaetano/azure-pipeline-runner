@@ -21,7 +21,7 @@ export function registerCommands(
   stageTreeDataProvider: StageTreeDataProvider
 ) {
   context.subscriptions.push(
-    vscode.commands.registerCommand("azurePipelineRunner.refreshEntry", () => {
+    vscode.commands.registerCommand("azurePipelinesRunner.refreshEntry", () => {
       pipelineTreeDataProvider.refresh();
       buildTreeDataProvider.refresh();
       stageTreeDataProvider.refresh();
@@ -30,7 +30,7 @@ export function registerCommands(
 
   context.subscriptions.push(
     vscode.commands.registerCommand(
-      "azurePipelineRunner.openPipeline",
+      "azurePipelinesRunner.openPipeline",
       ({ pipeline }: { pipeline: Pipeline }) => {
         openExternalLink(pipeline._links.web.href);
       }
@@ -39,7 +39,7 @@ export function registerCommands(
 
   context.subscriptions.push(
     vscode.commands.registerCommand(
-      "azurePipelineRunner.openBuild",
+      "azurePipelinesRunner.openBuild",
       ({ builds }: { builds: Build[] }) => {
         const build = builds[0];
         openExternalLink(build._links.web.href);
@@ -49,7 +49,7 @@ export function registerCommands(
 
   context.subscriptions.push(
     vscode.commands.registerCommand(
-      "azurePipelineRunner.openStage",
+      "azurePipelinesRunner.openStage",
       async ({ timelineRecord }: { timelineRecord: TimelineRecord }) => {
         const { organization } = await getConfiguration();
 
@@ -77,7 +77,7 @@ export function registerCommands(
 
   context.subscriptions.push(
     vscode.commands.registerCommand(
-      "azurePipelineRunner.openStageLog",
+      "azurePipelinesRunner.openStageLog",
       async ({ timelineRecord }: { timelineRecord: TimelineRecord }) => {
         try {
           const url = timelineRecord.log?.url;
@@ -110,17 +110,17 @@ export function registerCommands(
   );
 
   context.subscriptions.push(
-    vscode.commands.registerCommand("azurePipelineRunner.showWelcome", () => {
+    vscode.commands.registerCommand("azurePipelinesRunner.showWelcome", () => {
       vscode.commands.executeCommand(
         "workbench.action.openSettings",
-        "azurePipelineRunner"
+        "azurePipelinesRunner"
       );
     })
   );
 
   context.subscriptions.push(
     vscode.commands.registerCommand(
-      "azurePipelineRunner.refreshBuilds",
+      "azurePipelinesRunner.refreshBuilds",
       async () => {
         await buildTreeDataProvider.refreshBuilds();
         stageTreeDataProvider.refresh();
@@ -130,7 +130,7 @@ export function registerCommands(
 
   context.subscriptions.push(
     vscode.commands.registerCommand(
-      "azurePipelineRunner.loadMoreBuilds",
+      "azurePipelinesRunner.loadMoreBuilds",
       async () => {
         await buildTreeDataProvider.loadMoreBuilds();
       }
@@ -139,7 +139,7 @@ export function registerCommands(
 
   context.subscriptions.push(
     vscode.commands.registerCommand(
-      "azurePipelineRunner.loadStages",
+      "azurePipelinesRunner.loadStages",
       async ({ builds, project }: { builds: Build[]; project: Project }) => {
         const build = builds[0];
         await stageTreeDataProvider.loadStages(build, project);
@@ -149,7 +149,7 @@ export function registerCommands(
 
   context.subscriptions.push(
     vscode.commands.registerCommand(
-      "azurePipelineRunner.loadBuilds",
+      "azurePipelinesRunner.loadBuilds",
       async ({
         pipeline,
         project,

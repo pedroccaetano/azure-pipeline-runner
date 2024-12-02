@@ -15,7 +15,7 @@ export class PipelineItem extends vscode.TreeItem {
     this.tooltip = "Click!";
     if (contextValue === "pipeline" && pipeline && project) {
       this.command = {
-        command: "azurePipelineRunner.loadBuilds",
+        command: "azurePipelinesRunner.loadBuilds",
         title: "Load Builds",
         arguments: [{ pipeline, project }],
       };

@@ -1,12 +1,12 @@
-# Azure Pipeline Runner
+# Azure Pipelines Runner
 
-Azure Pipeline Runner is a Visual Studio Code extension that allows you to interact with your Azure DevOps pipelines and builds directly from the editor. This extension provides a convenient way to manage and monitor your CI/CD workflows without leaving your development environment.
+Azure Pipelines Runner is a Visual Studio Code extension that allows you to interact with your Azure DevOps pipelines and builds directly from the editor. This extension provides a convenient way to manage and monitor your CI/CD workflows without leaving your development environment.
 
 > **Disclaimer:** This extension works only with Azure DevOps Services (cloud) and not with Azure DevOps Server (on-premises).
 
 ## Features
 
-![Azure Pipeline Runner Demo](./resources/demo.gif)
+![Azure Pipelines Runner Demo](./resources/demo.gif)
 
 1. **List Azure DevOps Projects**: View all available projects in your Azure DevOps organization.
 2. **List Pipelines in Each Project**: Navigate through the pipelines configured in each project.
@@ -27,19 +27,19 @@ Azure Pipeline Runner is a Visual Studio Code extension that allows you to inter
 
 This extension contributes the following settings:
 
-- `azurePipelineRunner.organization`: Azure DevOps organization name.
-- `azurePipelineRunner.pat`: Personal Access Token (PAT) for Azure DevOps.
+- `azurePipelinesRunner.organization`: Azure DevOps organization name.
+- `azurePipelinesRunner.pat`: Personal Access Token (PAT) for Azure DevOps.
 
 ```json
 {
-  "azurePipelineRunner.organization": "project-test",
-  "azurePipelineRunner.pat": "000000000"
+  "azurePipelinesRunner.organization": "project-test",
+  "azurePipelinesRunner.pat": "000000000"
 }
 ```
 
 ## Todo
 
-For more detailed project management, tracking, and planning, you can visit the project board on GitHub. This board provides an overview of the current tasks, progress, and future plans for the Azure Pipeline Runner extension.
+For more detailed project management, tracking, and planning, you can visit the project board on GitHub. This board provides an overview of the current tasks, progress, and future plans for the Azure Pipelines Runner extension.
 
 [Project Board](https://github.com/users/pedroccaetano/projects/2)
 

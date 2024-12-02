@@ -84,7 +84,7 @@ export class PipelineTreeDataProvider
           )
       );
     } else if (element?.contextValue === "pipeline") {
-      vscode.commands.executeCommand("azurePipelineRunner.loadBuilds", {
+      vscode.commands.executeCommand("azurePipelinesRunner.loadBuilds", {
         pipeline: element.pipeline,
         project: element.project,
       });

@@ -33,10 +33,10 @@ export function activate(context: vscode.ExtensionContext) {
 
   const organization = vscode.workspace
     .getConfiguration()
-    .get("azurePipelineRunner.organization");
+    .get("azurePipelinesRunner.organization");
   const pat = vscode.workspace
     .getConfiguration()
-    .get("azurePipelineRunner.pat");
+    .get("azurePipelinesRunner.pat");
   if (!organization || !pat) {
     showWelcome();
   }
