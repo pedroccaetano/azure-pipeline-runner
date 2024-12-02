@@ -1,6 +1,6 @@
 {
   "name": "azure-pipeline-runner",
-  "displayName": "Azure Pipeline Runner",
+  "displayName": "Azure Pipelines Runner",
   "author": {
     "name": "Pedro Caetano",
     "email": "pedrohenriquedecaldascaetano@gmail.com"
