@@ -1,5 +1,5 @@
 {
-  "name": "azure-pipeline-runner",
+  "name": "azure-pipelines-runner",
   "displayName": "Azure Pipelines Runner",
   "author": {
     "name": "Pedro Caetano",
