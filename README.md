@@ -6,11 +6,14 @@ Azure Pipeline Runner is a Visual Studio Code extension that allows you to inter
 
 ## Features
 
-- List Azure DevOps projects.
-- List pipelines within each project.
-- List builds within each pipeline.
-- View build details.
-- Open pipelines and builds in the browser.
+![Azure Pipeline Runner Demo](./resources/demo.gif)
+
+1. **List Azure DevOps Projects**: View all available projects in your Azure DevOps organization.
+2. **List Pipelines in Each Project**: Navigate through the pipelines configured in each project.
+3. **List Builds in Each Pipeline**: See all builds associated with a specific pipeline.
+4. **View Build Details**: Access detailed information about each build, including logs and status.
+5. **Open Pipelines and Builds in Browser**: Quickly access the Azure DevOps web interface for any pipeline or build.
+6. **Display Build Stages and Logs**: View the build execution stages and access logs directly in VS Code.
 
 ## Requirements
 
@@ -42,11 +45,16 @@ For more detailed project management, tracking, and planning, you can visit the 
 
 ## Collaboration
 
-We welcome contributions from the community! If you have any ideas, suggestions, or bug reports, please feel free to open an issue on GitHub. If you would like to contribute code, you can fork the repository, make your changes, and create a pull request.
+I welcome contributions from the community! If you have any ideas, suggestions, or bug reports, please feel free to open an issue on GitHub. If you would like to contribute code, you can fork the repository, make your changes, and create a pull request.
 
-Feel free to contact us if you have any questions or need assistance. We appreciate your feedback and contributions!
+Feel free to contact us if you have any questions or need assistance. I appreciate your feedback and contributions!
 
 ## Release Notes
+
+### 0.0.5
+
+- Enhanced README with a more detailed description and an illustrative demo GIF.
+- Improved stage log output formatting by removing timestamps for better readability.
 
 ### 0.0.4
 
