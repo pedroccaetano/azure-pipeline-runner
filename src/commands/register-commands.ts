@@ -139,6 +139,15 @@ export function registerCommands(
 
   context.subscriptions.push(
     vscode.commands.registerCommand(
+      "azurePipelinesRunner.refreshStages",
+      async () => {
+        await stageTreeDataProvider.refreshStages();
+      }
+    )
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
       "azurePipelinesRunner.loadStages",
       async ({ builds, project }: { builds: Build[]; project: Project }) => {
         const build = builds[0];
