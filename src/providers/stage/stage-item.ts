@@ -25,6 +25,9 @@ export class StageItem extends vscode.TreeItem {
       case "canceled":
         iconName = "canceled.svg";
         break;
+      case "succeededWithIssues":
+        iconName = "succeededWithIssues.svg";
+        break;
       case "skipped":
         iconName = "skipped.svg";
         return {
