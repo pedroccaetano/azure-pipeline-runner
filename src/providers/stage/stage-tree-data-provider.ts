@@ -19,6 +19,8 @@ export class StageTreeDataProvider
 
   private records: StageItem[] = [];
   private allRecords: TimelineRecord[] = [];
+  private project: Project | undefined = undefined;
+  private build: Build | undefined = undefined;
 
   refresh(): void {
     this.records = [];
@@ -57,6 +59,9 @@ export class StageTreeDataProvider
         cancellable: false,
       },
       async (progress) => {
+        this.project = project;
+        this.build = build;
+
         progress.report({ increment: 0 });
 
         const buildTimeline = await getBuildStages(project.name, build.id);
@@ -111,5 +116,13 @@ export class StageTreeDataProvider
         record
       );
     });
+  }
+
+  public async refreshStages() {
+    if (!this.build || !this.project) {
+      return;
+    }
+
+    await this.loadStages(this.build, this.project);
   }
 }

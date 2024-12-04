@@ -76,6 +76,14 @@
         }
       },
       {
+        "command": "azurePipelinesRunner.refreshStages",
+        "title": "Refresh",
+        "icon": {
+          "light": "resources/light/refresh.svg",
+          "dark": "resources/dark/refresh.svg"
+        }
+      },
+      {
         "command": "azurePipelinesRunner.openPipeline",
         "title": "Open Pipeline",
         "icon": {
@@ -126,6 +134,11 @@
         {
           "command": "azurePipelinesRunner.refreshBuilds",
           "when": "view == azurePipelineBuilds",
+          "group": "navigation"
+        },
+        {
+          "command": "azurePipelinesRunner.refreshStages",
+          "when": "view == azurePipelineStages",
           "group": "navigation"
         },
         {
