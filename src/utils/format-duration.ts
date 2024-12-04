@@ -9,6 +9,10 @@ export const formatDuration = (duration: Date) => {
   if (minutes > 0 || hours > 0) {
     formattedDuration += `${minutes}m `;
   }
-  formattedDuration += `${seconds}s`;
+  if (parseInt(seconds) < 1) {
+    formattedDuration += "<1s";
+  } else {
+    formattedDuration += `${seconds}s`;
+  }
   return formattedDuration.trim();
 };
