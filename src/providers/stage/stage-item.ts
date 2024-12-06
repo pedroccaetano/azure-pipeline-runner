@@ -59,7 +59,7 @@ export class StageItem extends vscode.TreeItem {
           break;
         }
 
-        if (this.timelineRecord.state === "notStarted") {
+        if (this.timelineRecord.state === "pending" || this.timelineRecord.state === "notStarted") {
           iconName = "pending.svg";
           return {
             light: path.join(
