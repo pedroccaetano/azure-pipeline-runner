@@ -20,10 +20,14 @@ export class StageItem extends vscode.TreeItem {
         iconName = "succeeded.svg";
         break;
       case "failed":
+      case "abandoned":
         iconName = "failed.svg";
         break;
       case "canceled":
         iconName = "canceled.svg";
+        break;
+      case "succeededWithIssues":
+        iconName = "succeededWithIssues.svg";
         break;
       case "skipped":
         iconName = "skipped.svg";
@@ -49,8 +53,38 @@ export class StageItem extends vscode.TreeItem {
             iconName
           ),
         };
-
       default:
+        if (this.timelineRecord.state === "inProgress") {
+          iconName = "clock.svg";
+          break;
+        }
+
+        if (this.timelineRecord.state === "pending" || this.timelineRecord.state === "notStarted") {
+          iconName = "pending.svg";
+          return {
+            light: path.join(
+              __filename,
+              "..",
+              "..",
+              "..",
+              "..",
+              "resources",
+              "light",
+              iconName
+            ),
+            dark: path.join(
+              __filename,
+              "..",
+              "..",
+              "..",
+              "..",
+              "resources",
+              "dark",
+              iconName
+            ),
+          };
+        }
+
         iconName = "";
         break;
     }
