@@ -238,6 +238,7 @@
     "typescript": "^5.6.3"
   },
   "dependencies": {
-    "axios": "^1.7.7"
+    "axios": "^1.7.7",
+    "js-yaml": "^4.1.1"
   }
 }
