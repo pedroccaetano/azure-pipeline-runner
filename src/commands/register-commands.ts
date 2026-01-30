@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { Pipeline, Project } from "../types/types";
+import { Pipeline, Project, TemplateParameters } from "../types/types";
 import { PipelineTreeDataProvider } from "../providers/pipeline/pipeline-tree-data-provider";
 import { BuildTreeDataProvider } from "../providers/build/build-tree-data-provider";
 import { StageTreeDataProvider } from "../providers/stage/stage-tree-data-provider";
@@ -198,7 +198,7 @@ export function registerCommands(
           const branch = build.sourceBranch.replace("refs/heads/", "");
 
           // Try to get the original run's template parameters
-          let templateParameters: { [key: string]: string } = {};
+          let templateParameters: TemplateParameters = {};
           const pipelineRun = await vscode.window.withProgress(
             {
               location: vscode.ProgressLocation.Window,
@@ -383,11 +383,8 @@ export function registerCommands(
                   templateParameters = paramValues;
                   console.log("Collected parameter values:", templateParameters);
                 } else {
-                  // Log that no parameters were found but file was fetched
+                  // No parameters found - this is fine, proceed without parameters
                   console.log("No parameters found in YAML file:", yamlPath);
-                  vscode.window.showWarningMessage(
-                    `No parameters detected in pipeline YAML. Check Developer Console for details.`
-                  );
                 }
               } else {
                 console.log("Failed to fetch YAML content for:", yamlPath);

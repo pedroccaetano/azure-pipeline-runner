@@ -42,8 +42,8 @@ type PipelineParameter = {
   name: string;
   displayName?: string;
   type?: string;
-  default?: string;
-  values?: string[];
+  default?: unknown;
+  values?: (string | number | boolean)[];
 };
 
 type PipelineConfiguration = {
@@ -65,8 +65,10 @@ type PipelineDefinition = {
   _links: PipelineLinks;
 };
 
+type TemplateParameterValue = string | number | boolean | object | TemplateParameterValue[];
+
 type TemplateParameters = {
-  [key: string]: string;
+  [key: string]: TemplateParameterValue;
 };
 
 export {
@@ -77,4 +79,5 @@ export {
   PipelineParameter,
   PipelineDefinition,
   TemplateParameters,
+  TemplateParameterValue,
 };
