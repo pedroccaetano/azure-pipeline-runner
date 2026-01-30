@@ -184,6 +184,22 @@ export async function runPipeline(
   }
 }
 
+export async function getPipelineRun(
+  project: string,
+  pipelineId: number,
+  runId: number
+): Promise<{ templateParameters?: { [key: string]: string }; resources?: { repositories?: { self?: { refName?: string } } } } | null> {
+  try {
+    const { pat, organization } = await getConfiguration();
+    const url = `https://dev.azure.com/${organization}/${project}/_apis/pipelines/${pipelineId}/runs/${runId}?api-version=7.1-preview.1`;
+    const response = await getAxiosInstance(pat).get(url);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching pipeline run:", error);
+    return null;
+  }
+}
+
 export async function getPipelineDefinition(
   project: string,
   pipelineId: number

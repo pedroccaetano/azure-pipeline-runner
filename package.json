@@ -130,6 +130,11 @@
           "light": "resources/light/play.svg",
           "dark": "resources/dark/play.svg"
         }
+      },
+      {
+        "command": "azurePipelinesRunner.retriggerBuild",
+        "title": "Retrigger Build",
+        "icon": "$(debug-restart)"
       }
     ],
     "menus": {
@@ -167,9 +172,14 @@
           "group": "inline"
         },
         {
+          "command": "azurePipelinesRunner.retriggerBuild",
+          "when": "viewItem == build",
+          "group": "inline@1"
+        },
+        {
           "command": "azurePipelinesRunner.openBuild",
           "when": "viewItem == build",
-          "group": "inline"
+          "group": "inline@2"
         },
         {
           "command": "azurePipelinesRunner.openStage",

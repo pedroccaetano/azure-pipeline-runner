@@ -13,6 +13,7 @@ import {
   getPipelineDefinition,
   getPipelineYaml,
   parseYamlParameters,
+  getPipelineRun,
 } from "../utils/requests";
 import { collectParameterValues } from "../utils/parameter-prompt";
 
@@ -178,6 +179,74 @@ export function registerCommands(
         stageTreeDataProvider.refresh();
         buildTreeDataProvider.refresh();
         await buildTreeDataProvider.loadBuilds(pipeline, project);
+      }
+    )
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      "azurePipelinesRunner.retriggerBuild",
+      async ({ builds, project }: { builds: Build[]; project: Project }) => {
+        try {
+          const build = builds[0];
+          if (!build) {
+            vscode.window.showErrorMessage("No build found to retrigger.");
+            return;
+          }
+
+          const pipelineId = build.definition.id;
+          const branch = build.sourceBranch.replace("refs/heads/", "");
+
+          // Try to get the original run's template parameters
+          let templateParameters: { [key: string]: string } = {};
+          const pipelineRun = await vscode.window.withProgress(
+            {
+              location: vscode.ProgressLocation.Window,
+              title: "Fetching build parameters...",
+              cancellable: false,
+            },
+            async () => {
+              return await getPipelineRun(project.name, pipelineId, build.id);
+            }
+          );
+
+          if (pipelineRun?.templateParameters) {
+            templateParameters = pipelineRun.templateParameters;
+          }
+
+          // Trigger pipeline run with the same parameters
+          const result = await vscode.window.withProgress(
+            {
+              location: vscode.ProgressLocation.Notification,
+              title: `Retriggering build on branch: ${branch}`,
+              cancellable: false,
+            },
+            async () => {
+              return await runPipeline(
+                project.name,
+                pipelineId,
+                branch,
+                templateParameters
+              );
+            }
+          );
+
+          if (result) {
+            vscode.window.showInformationMessage(
+              `Build successfully retriggered on branch: ${branch}`
+            );
+            // Refresh builds list
+            await buildTreeDataProvider.refreshBuilds();
+          }
+        } catch (error) {
+          let errorMessage = "Unknown error";
+          if (error instanceof Error) {
+            errorMessage = error.message;
+          }
+          vscode.window.showErrorMessage(
+            `Failed to retrigger build: ${errorMessage}`
+          );
+        }
       }
     )
   );
