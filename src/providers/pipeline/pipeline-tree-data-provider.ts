@@ -29,22 +29,26 @@ export class PipelineTreeDataProvider
     if (!element) {
       // Top-level: Projects
       const projects = (await getProjects()) || [];
-      return projects.map(
-        (project) =>
-          new PipelineItem(
-            project.name,
-            vscode.TreeItemCollapsibleState.Collapsed,
-            "project",
-            undefined,
-            project
-          )
-      );
+      return projects
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .map(
+          (project) =>
+            new PipelineItem(
+              project.name,
+              vscode.TreeItemCollapsibleState.Collapsed,
+              "project",
+              undefined,
+              project
+            )
+        );
     } else if (element?.contextValue === "project") {
       // Second-level: Pipelines or Folders
       this.pipelines =
         (await getPipelines(element?.project?.name as string)) || [];
-      const rootFolders = this.getRootFolders(this.pipelines);
-      const rootPipelines = this.getRootPipelines(this.pipelines);
+      const rootFolders = this.getRootFolders(this.pipelines).sort();
+      const rootPipelines = this.getRootPipelines(this.pipelines).sort((a, b) =>
+        a.name.localeCompare(b.name)
+      );
       const rootItems = [
         ...rootFolders.map(
           (folder) =>
@@ -131,10 +135,15 @@ export class PipelineTreeDataProvider
       }
     });
 
-    const childFolderItems = Array.from(childFolders).map((folder) => ({
-      label: folder.split("\\")[1],
-      isFolder: true,
-    }));
-    return [...childFolderItems, ...childPipelines];
+    const childFolderItems = Array.from(childFolders)
+      .map((folder) => ({
+        label: folder.split("\\")[1],
+        isFolder: true,
+      }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+    const sortedChildPipelines = childPipelines.sort((a, b) =>
+      a.label.localeCompare(b.label)
+    );
+    return [...childFolderItems, ...sortedChildPipelines];
   }
 }
