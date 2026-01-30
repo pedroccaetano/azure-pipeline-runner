@@ -117,3 +117,58 @@ export async function getStageLog(
 
   return response.data;
 }
+
+export async function getRemoteBranches(
+  project: string,
+  repositoryId: string
+): Promise<string[]> {
+  try {
+    const { pat, organization } = await getConfiguration();
+    const url = `https://dev.azure.com/${organization}/${project}/_apis/git/repositories/${repositoryId}/refs?filter=heads/&api-version=7.1`;
+    const response = await getAxiosInstance(pat).get(url);
+    const branches = response.data.value.map((ref: any) =>
+      ref.name.replace("refs/heads/", "")
+    );
+    return branches;
+  } catch (error) {
+    vscode.window.showErrorMessage(
+      "Error fetching branches. Please check if your PAT has the correct permissions."
+    );
+    return [];
+  }
+}
+
+export async function runPipeline(
+  project: string,
+  pipelineId: number,
+  branch: string
+): Promise<Build | null> {
+  try {
+    const { pat, organization } = await getConfiguration();
+    const url = `https://dev.azure.com/${organization}/${project}/_apis/pipelines/${pipelineId}/runs?api-version=7.1-preview.1`;
+    const requestBody = {
+      resources: {
+        repositories: {
+          self: {
+            refName: `refs/heads/${branch}`,
+          },
+        },
+      },
+    };
+    const response = await getAxiosInstance(pat).post(url, requestBody);
+    return response.data;
+  } catch (error: any) {
+    let errorMessage = "Unknown error";
+    if (error.response?.data?.message) {
+      errorMessage = error.response.data.message;
+    } else if (error.response?.data) {
+      errorMessage = JSON.stringify(error.response.data);
+    } else if (error instanceof Error) {
+      errorMessage = error.message;
+    }
+    vscode.window.showErrorMessage(
+      `Failed to run pipeline: ${errorMessage}`
+    );
+    return null;
+  }
+}

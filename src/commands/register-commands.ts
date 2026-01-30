@@ -5,7 +5,12 @@ import { BuildTreeDataProvider } from "../providers/build/build-tree-data-provid
 import { StageTreeDataProvider } from "../providers/stage/stage-tree-data-provider";
 import { Build } from "../types/builds";
 import { TimelineRecord } from "../types/stages";
-import { getConfiguration, getStageLog } from "../utils/requests";
+import {
+  getConfiguration,
+  getStageLog,
+  getRemoteBranches,
+  runPipeline,
+} from "../utils/requests";
 
 const openExternalLink = (url: string) => {
   if (!url) {
@@ -169,6 +174,143 @@ export function registerCommands(
         stageTreeDataProvider.refresh();
         buildTreeDataProvider.refresh();
         await buildTreeDataProvider.loadBuilds(pipeline, project);
+      }
+    )
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      "azurePipelinesRunner.runPipelineFromBranch",
+      async () => {
+        try {
+          const currentPipeline = buildTreeDataProvider.getCurrentPipeline();
+          const currentProject = buildTreeDataProvider.getCurrentProject();
+
+          if (!currentPipeline || !currentProject) {
+            vscode.window.showErrorMessage(
+              "Please select a pipeline first to run a build."
+            );
+            return;
+          }
+
+          // Get the repository ID from the first build
+          const builds = await vscode.window.withProgress(
+            {
+              location: vscode.ProgressLocation.Window,
+              title: "Fetching repository information...",
+              cancellable: false,
+            },
+            async () => {
+              const { getBuildsByDefinitionId } = await import(
+                "../utils/requests.js"
+              );
+              return await getBuildsByDefinitionId(
+                currentProject.name,
+                currentPipeline.id
+              );
+            }
+          );
+
+          if (builds.length === 0) {
+            vscode.window.showErrorMessage(
+              "No builds found to determine repository."
+            );
+            return;
+          }
+
+          const repositoryId = builds[0].repository.id;
+
+          // Fetch remote branches
+          const branches = await vscode.window.withProgress(
+            {
+              location: vscode.ProgressLocation.Window,
+              title: "Fetching remote branches...",
+              cancellable: false,
+            },
+            async () => {
+              return await getRemoteBranches(
+                currentProject.name,
+                repositoryId
+              );
+            }
+          );
+
+          if (branches.length === 0) {
+            vscode.window.showErrorMessage(
+              "No branches found for this repository."
+            );
+            return;
+          }
+
+          // Show branch picker
+          const selectedBranch = await vscode.window.showQuickPick(branches, {
+            placeHolder: "Select a branch to run the pipeline",
+            title: "Run Pipeline from Branch",
+          });
+
+          if (!selectedBranch) {
+            return; // User cancelled
+          }
+
+          // Trigger pipeline run
+          const result = await vscode.window.withProgress(
+            {
+              location: vscode.ProgressLocation.Notification,
+              title: `Running pipeline on branch: ${selectedBranch}`,
+              cancellable: false,
+            },
+            async () => {
+              return await runPipeline(
+                currentProject.name,
+                currentPipeline.id,
+                selectedBranch
+              );
+            }
+          );
+
+          if (result) {
+            vscode.window.showInformationMessage(
+              `Pipeline run successfully triggered for branch: ${selectedBranch}`
+            );
+            // Refresh builds list with retry to ensure new build appears
+            const maxRetries = 5;
+            const retryDelay = 1000; // 1 second
+            
+            for (let i = 0; i < maxRetries; i++) {
+              await buildTreeDataProvider.refreshBuilds();
+              
+              // Check if the new build appears in the list by importing and checking
+              const { getBuildsByDefinitionId } = await import(
+                "../utils/requests.js"
+              );
+              const builds = await getBuildsByDefinitionId(
+                currentProject.name,
+                currentPipeline.id
+              );
+              
+              // Look for the newly created build
+              const newBuild = builds.find((b) => b.id === result.id);
+              
+              if (newBuild && (newBuild.status || newBuild.result)) {
+                // Build found with status, we're done
+                break;
+              }
+              
+              // If not found or no status yet, wait before retrying (except on last iteration)
+              if (i < maxRetries - 1) {
+                await new Promise((resolve) => setTimeout(resolve, retryDelay));
+              }
+            }
+          }
+        } catch (error) {
+          let errorMessage = "Unknown error";
+          if (error instanceof Error) {
+            errorMessage = error.message;
+          }
+          vscode.window.showErrorMessage(
+            `Failed to run pipeline: ${errorMessage}`
+          );
+        }
       }
     )
   );

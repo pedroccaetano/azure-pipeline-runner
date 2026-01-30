@@ -18,8 +18,18 @@ export class BuildTreeDataProvider
 
   private builds: BuildItem[] = [];
   private allBuilds: Build[] = [];
+  private currentPipeline?: Pipeline;
+  private currentProject?: Project;
 
   constructor() {}
+
+  getCurrentPipeline(): Pipeline | undefined {
+    return this.currentPipeline;
+  }
+
+  getCurrentProject(): Project | undefined {
+    return this.currentProject;
+  }
 
   refresh(): void {
     this.builds = [];
@@ -42,6 +52,9 @@ export class BuildTreeDataProvider
       `Loading builds for ${pipeline.name}`,
       async (progress) => {
         try {
+          this.currentPipeline = pipeline;
+          this.currentProject = project;
+
           const builds = await getBuildsByDefinitionId(
             project.name,
             pipeline.id

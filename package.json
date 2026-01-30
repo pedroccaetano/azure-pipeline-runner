@@ -122,6 +122,14 @@
           "light": "resources/light/plus.svg",
           "dark": "resources/dark/plus.svg"
         }
+      },
+      {
+        "command": "azurePipelinesRunner.runPipelineFromBranch",
+        "title": "Run Pipeline from Branch",
+        "icon": {
+          "light": "resources/light/play.svg",
+          "dark": "resources/dark/play.svg"
+        }
       }
     ],
     "menus": {
@@ -134,7 +142,7 @@
         {
           "command": "azurePipelinesRunner.refreshBuilds",
           "when": "view == azurePipelineBuilds",
-          "group": "navigation"
+          "group": "navigation@3"
         },
         {
           "command": "azurePipelinesRunner.refreshStages",
@@ -142,9 +150,14 @@
           "group": "navigation"
         },
         {
+          "command": "azurePipelinesRunner.runPipelineFromBranch",
+          "when": "view == azurePipelineBuilds",
+          "group": "navigation@1"
+        },
+        {
           "command": "azurePipelinesRunner.loadMoreBuilds",
           "when": "view == azurePipelineBuilds",
-          "group": "navigation"
+          "group": "navigation@2"
         }
       ],
       "view/item/context": [
