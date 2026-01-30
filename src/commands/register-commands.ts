@@ -10,7 +10,11 @@ import {
   getStageLog,
   getRemoteBranches,
   runPipeline,
+  getPipelineDefinition,
+  getPipelineYaml,
+  parseYamlParameters,
 } from "../utils/requests";
+import { collectParameterValues } from "../utils/parameter-prompt";
 
 const openExternalLink = (url: string) => {
   if (!url) {
@@ -252,6 +256,91 @@ export function registerCommands(
             return; // User cancelled
           }
 
+          // Fetch pipeline definition and parameters
+          const pipelineDefinition = await vscode.window.withProgress(
+            {
+              location: vscode.ProgressLocation.Window,
+              title: "Fetching pipeline parameters...",
+              cancellable: false,
+            },
+            async () => {
+              return await getPipelineDefinition(
+                currentProject.name,
+                currentPipeline.id
+              );
+            }
+          );
+
+          let templateParameters = {};
+
+          if (pipelineDefinition?.configuration) {
+            // Try to fetch and parse YAML for parameters
+            const yamlPath = pipelineDefinition.configuration.path;
+            const repoId =
+              pipelineDefinition.configuration.repository?.id || repositoryId;
+
+            console.log("Pipeline configuration found - YAML path:", yamlPath, "Repo ID:", repoId);
+
+            if (yamlPath && repoId) {
+              const yamlContent = await getPipelineYaml(
+                currentProject.name,
+                repoId,
+                yamlPath,
+                selectedBranch
+              );
+
+              if (yamlContent) {
+                console.log("YAML file fetched successfully, length:", yamlContent.length);
+                console.log("YAML path:", yamlPath);
+                console.log("YAML content preview:", yamlContent.substring(0, 500));
+                
+                const parameters = parseYamlParameters(yamlContent);
+                console.log("Parsed parameters count:", parameters.length);
+
+                if (parameters.length > 0) {
+                  vscode.window.showInformationMessage(
+                    `Found ${parameters.length} parameter(s) for this pipeline`
+                  );
+                  
+                  // Prompt user for parameter values
+                  const paramValues = await collectParameterValues(parameters);
+
+                  if (paramValues === null) {
+                    // User cancelled parameter input
+                    vscode.window.showInformationMessage("Pipeline run cancelled");
+                    return;
+                  }
+
+                  templateParameters = paramValues;
+                  console.log("Collected parameter values:", templateParameters);
+                } else {
+                  // Log that no parameters were found but file was fetched
+                  console.log("No parameters found in YAML file:", yamlPath);
+                  vscode.window.showWarningMessage(
+                    `No parameters detected in pipeline YAML. Check Developer Console for details.`
+                  );
+                }
+              } else {
+                console.log("Failed to fetch YAML content for:", yamlPath);
+                vscode.window.showWarningMessage(
+                  `Could not fetch YAML file: ${yamlPath}. Check Developer Console for details.`
+                );
+              }
+            } else {
+              console.log("Missing YAML path or repository ID");
+              console.log("YAML path:", yamlPath, "Repo ID:", repoId);
+              vscode.window.showWarningMessage(
+                "Pipeline configuration incomplete. Check Developer Console for details."
+              );
+            }
+          } else {
+            console.log("No pipeline configuration found");
+            console.log("Pipeline definition:", JSON.stringify(pipelineDefinition, null, 2));
+            vscode.window.showWarningMessage(
+              "Pipeline definition has no configuration. Check Developer Console for details."
+            );
+          }
+
           // Trigger pipeline run
           const result = await vscode.window.withProgress(
             {
@@ -263,7 +352,8 @@ export function registerCommands(
               return await runPipeline(
                 currentProject.name,
                 currentPipeline.id,
-                selectedBranch
+                selectedBranch,
+                templateParameters
               );
             }
           );

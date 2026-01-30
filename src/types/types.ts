@@ -38,4 +38,43 @@ type ProjectsResponse = {
   value: Project[];
 };
 
-export { Pipeline, PipelinesResponse, Project, ProjectsResponse };
+type PipelineParameter = {
+  name: string;
+  displayName?: string;
+  type?: string;
+  default?: string;
+  values?: string[];
+};
+
+type PipelineConfiguration = {
+  path: string;
+  repository?: {
+    id: string;
+    type: string;
+  };
+  type: string;
+};
+
+type PipelineDefinition = {
+  configuration: PipelineConfiguration;
+  id: number;
+  name: string;
+  folder: string;
+  revision: number;
+  url: string;
+  _links: PipelineLinks;
+};
+
+type TemplateParameters = {
+  [key: string]: string;
+};
+
+export {
+  Pipeline,
+  PipelinesResponse,
+  Project,
+  ProjectsResponse,
+  PipelineParameter,
+  PipelineDefinition,
+  TemplateParameters,
+};
