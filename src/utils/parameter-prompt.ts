@@ -14,18 +14,27 @@ export async function collectParameterValues(
 
     if (param.values && param.values.length > 0) {
       // Parameter has predefined values - show quick pick
-      const selectedValue = await vscode.window.showQuickPick(param.values, {
-        placeHolder: `Select a value for parameter: ${displayName}`,
+      // Create quick pick items with the default value marked
+      const quickPickItems = param.values.map((val) => ({
+        label: val,
+        description: val === defaultValue ? "(default)" : undefined,
+        picked: val === defaultValue,
+      }));
+
+      const selectedItem = await vscode.window.showQuickPick(quickPickItems, {
+        placeHolder: defaultValue
+          ? `Select a value for parameter: ${displayName} (default: ${defaultValue})`
+          : `Select a value for parameter: ${displayName}`,
         title: `Pipeline Parameter: ${displayName}`,
         ignoreFocusOut: true,
       });
 
-      if (selectedValue === undefined) {
+      if (selectedItem === undefined) {
         // User cancelled
         return null;
       }
 
-      value = selectedValue;
+      value = selectedItem.label;
     } else {
       // Parameter is free text - show input box
       const placeholder = defaultValue

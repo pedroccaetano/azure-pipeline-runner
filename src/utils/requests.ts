@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import * as yaml from "js-yaml";
 import { Build, PipelineById } from "../types/builds";
 import {
   PipelinesResponse,
@@ -272,93 +273,41 @@ export function parseYamlParameters(yamlContent: string): PipelineParameter[] {
   const parameters: PipelineParameter[] = [];
   
   try {
-    // Find the parameters section
-    const parametersMatch = yamlContent.match(/^parameters:\s*$/m);
-    if (!parametersMatch) {
-      console.log("No 'parameters:' section found in YAML");
-      return parameters; // No parameters section found
+    // Parse the YAML content
+    const parsedYaml = yaml.load(yamlContent) as any;
+    
+    if (!parsedYaml || !parsedYaml.parameters) {
+      console.log("No 'parameters' section found in YAML");
+      return parameters;
     }
     
-    // Extract the parameters section content
-    const parametersStartIndex = parametersMatch.index! + parametersMatch[0].length;
-    const remainingContent = yamlContent.substring(parametersStartIndex);
+    // Parameters should be an array
+    if (!Array.isArray(parsedYaml.parameters)) {
+      console.log("Parameters section is not an array");
+      return parameters;
+    }
     
-    // Find where parameters section ends (next top-level key or end of file)
-    const sectionEndMatch = remainingContent.match(/^\w+:/m);
-    const parametersSection = sectionEndMatch 
-      ? remainingContent.substring(0, sectionEndMatch.index)
-      : remainingContent;
-    
-    console.log("Parameters section length:", parametersSection.length);
-    
-    // Parse both formats:
-    // 1. Standard YAML: "- name: paramName"
-    // 2. Compact YAML: "- { name: 'paramName', ... }"
-    
-    const lines = parametersSection.split('\n');
-    
-    for (const line of lines) {
-      if (!line.trim().startsWith('-')) continue;
-      
-      // Check if it's compact format: - { name: 'value', ... }
-      const compactMatch = line.match(/^\s*-\s*\{\s*(.+?)\s*\}\s*$/);
-      if (compactMatch) {
-        // Parse compact format
-        const content = compactMatch[1];
-        const pairs = content.split(/,(?![^']*'(?:[^']*'[^']*')*[^']*$)/).map(s => s.trim());
-        
-        const param: any = {};
-        for (const pair of pairs) {
-          const colonIndex = pair.indexOf(':');
-          if (colonIndex === -1) continue;
-          
-          const key = pair.substring(0, colonIndex).trim();
-          let value = pair.substring(colonIndex + 1).trim();
-          
-          // Remove quotes
-          value = value.replace(/^['"]|['"]$/g, '');
-          
-          // Handle 'values' which is an array
-          if (key === 'values') {
-            const arrayMatch = value.match(/\[(.+)\]/);
-            if (arrayMatch) {
-              param.values = arrayMatch[1]
-                .split(',')
-                .map(v => v.trim().replace(/^['"]|['"]$/g, ''));
-            }
-          } else {
-            param[key] = value;
-          }
-        }
-        
-        if (param.name) {
-          parameters.push({
-            name: param.name,
-            displayName: param.displayName,
-            type: param.type,
-            default: param.default,
-            values: param.values,
-          });
-        }
-      } else {
-        // Standard format - already handled below
-        const nameMatch = line.match(/^\s*-\s+name:\s+['"]?(\w+)['"]?/);
-        if (nameMatch) {
-          const paramName = nameMatch[1];
-          // For standard format, we need to look ahead for additional properties
-          // This is a simplified version - the compact format is more common
-          parameters.push({
-            name: paramName,
-            displayName: paramName,
-            type: 'string',
-            default: undefined,
-            values: undefined,
-          });
-        }
+    // Extract parameters
+    for (const param of parsedYaml.parameters) {
+      if (!param.name) {
+        console.log("Parameter missing 'name' field, skipping:", param);
+        continue;
       }
+      
+      parameters.push({
+        name: param.name,
+        displayName: param.displayName || param.name,
+        type: param.type || 'string',
+        default: param.default,
+        values: param.values,
+      });
     }
     
-    console.log("Parsed parameters:", parameters.map(p => ({ name: p.name, hasValues: !!p.values })));
+    console.log("Parsed parameters:", parameters.map(p => ({ 
+      name: p.name, 
+      hasValues: !!p.values,
+      valuesCount: p.values?.length 
+    })));
   } catch (error) {
     console.error("Error parsing YAML parameters:", error);
   }
