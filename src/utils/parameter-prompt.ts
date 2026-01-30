@@ -8,7 +8,9 @@ export async function collectParameterValues(
 
   for (const param of parameters) {
     const displayName = param.displayName || param.name;
-    const defaultValue = param.default;
+    // Convert default value to string to handle booleans (false) and other types correctly
+    const hasDefault = param.default !== undefined && param.default !== null;
+    const defaultValue = hasDefault ? String(param.default) : undefined;
 
     let value: string | undefined;
 
@@ -22,7 +24,7 @@ export async function collectParameterValues(
       }));
 
       const selectedItem = await vscode.window.showQuickPick(quickPickItems, {
-        placeHolder: defaultValue
+        placeHolder: hasDefault
           ? `Select a value for parameter: ${displayName} (default: ${defaultValue})`
           : `Select a value for parameter: ${displayName}`,
         title: `Pipeline Parameter: ${displayName}`,
@@ -37,7 +39,7 @@ export async function collectParameterValues(
       value = selectedItem.label;
     } else {
       // Parameter is free text - show input box
-      const placeholder = defaultValue
+      const placeholder = hasDefault
         ? `Default: ${defaultValue}`
         : "Enter a value";
 
@@ -48,7 +50,7 @@ export async function collectParameterValues(
         ignoreFocusOut: true,
         validateInput: (text) => {
           // Only validate if no default is provided and input is empty
-          if (!defaultValue && (!text || text.trim().length === 0)) {
+          if (!hasDefault && (!text || text.trim().length === 0)) {
             return `A value for the '${param.name}' parameter must be provided.`;
           }
           return null;
@@ -60,10 +62,10 @@ export async function collectParameterValues(
         return null;
       }
 
-      value = inputValue || defaultValue;
+      value = inputValue !== "" ? inputValue : defaultValue;
     }
 
-    if (value) {
+    if (value !== undefined && value !== "") {
       templateParameters[param.name] = value;
     }
   }
