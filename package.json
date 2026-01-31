@@ -44,6 +44,10 @@
     "views": {
       "azurePipelinesRunner": [
         {
+          "id": "azurePipelineAccounts",
+          "name": "Accounts"
+        },
+        {
           "id": "azurePipelineView",
           "name": "Pipelines",
           "when": "true"
@@ -135,10 +139,44 @@
         "command": "azurePipelinesRunner.retriggerBuild",
         "title": "Retrigger Build",
         "icon": "$(debug-restart)"
+      },
+      {
+        "command": "azurePipelinesRunner.addAccount",
+        "title": "Add Account",
+        "icon": "$(add)"
+      },
+      {
+        "command": "azurePipelinesRunner.switchAccount",
+        "title": "Switch Account"
+      },
+      {
+        "command": "azurePipelinesRunner.editAccountNote",
+        "title": "Edit Note",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "azurePipelinesRunner.deleteAccount",
+        "title": "Delete Account",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "azurePipelinesRunner.refreshAccounts",
+        "title": "Refresh Accounts",
+        "icon": "$(refresh)"
       }
     ],
     "menus": {
       "view/title": [
+        {
+          "command": "azurePipelinesRunner.addAccount",
+          "when": "view == azurePipelineAccounts",
+          "group": "navigation@1"
+        },
+        {
+          "command": "azurePipelinesRunner.refreshAccounts",
+          "when": "view == azurePipelineAccounts",
+          "group": "navigation@2"
+        },
         {
           "command": "azurePipelinesRunner.refreshEntry",
           "when": "view == azurePipelineView",
@@ -166,6 +204,16 @@
         }
       ],
       "view/item/context": [
+        {
+          "command": "azurePipelinesRunner.editAccountNote",
+          "when": "viewItem == account || viewItem == account-active",
+          "group": "inline@1"
+        },
+        {
+          "command": "azurePipelinesRunner.deleteAccount",
+          "when": "viewItem == account || viewItem == account-active",
+          "group": "inline@2"
+        },
         {
           "command": "azurePipelinesRunner.openPipeline",
           "when": "viewItem == pipeline",
@@ -196,25 +244,13 @@
     "viewsWelcome": [
       {
         "view": "azurePipelineView",
-        "contents": "Welcome to Azure Pipelines Runner!\n\nTo get started, provide your Azure DevOps organization name and a Personal Access Token (PAT).\n\nThe PAT should have the following scopes:\n- Build (Read & Execute)\n- Code (Read)\n- Release (Read, Write, Execute, & Manage)\n\n[Configure](command:azurePipelinesRunner.showWelcome)\n\n[Refresh](command:azurePipelinesRunner.refreshEntry)",
-        "when": "azurePipelinesRunner.showWelcome == false"
+        "contents": "Welcome to Azure Pipelines Runner!\n\nTo get started, add your Azure DevOps account in the Accounts pane above.\n\nThe PAT should have the following scopes:\n- Build (Read & Execute)\n- Code (Read)\n- Release (Read, Write, Execute, & Manage)\n\n[Add Account](command:azurePipelinesRunner.addAccount)\n\n[Refresh](command:azurePipelinesRunner.refreshEntry)"
       }
     ],
     "configuration": {
       "type": "object",
       "title": "Azure Pipelines Runner",
-      "properties": {
-        "azurePipelinesRunner.organization": {
-          "type": "string",
-          "default": "",
-          "description": "Azure DevOps organization name"
-        },
-        "azurePipelinesRunner.pat": {
-          "type": "string",
-          "default": "",
-          "description": "Personal Access Token (PAT) for Azure DevOps"
-        }
-      }
+      "properties": {}
     }
   },
   "scripts": {

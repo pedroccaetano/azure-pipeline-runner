@@ -1,34 +1,19 @@
 import * as vscode from "vscode";
 
 export async function showWelcome() {
-  const organization = await vscode.window.showInputBox({
-    prompt: "Enter your Azure DevOps organization name",
-    placeHolder: "Organization name",
-  });
+  const selection = await vscode.window.showInformationMessage(
+    "Welcome to Azure Pipelines Runner! To get started, add your Azure DevOps account using the Accounts pane.",
+    "Add Account",
+    "Learn More"
+  );
 
-  const pat = await vscode.window.showInputBox({
-    prompt: "Enter your Personal Access Token (PAT)",
-    placeHolder: "PAT",
-    password: true,
-  });
-
-  if (organization && pat) {
-    await vscode.workspace
-      .getConfiguration()
-      .update(
-        "azurePipelinesRunner.organization",
-        organization,
-        vscode.ConfigurationTarget.Global
-      );
-    await vscode.workspace
-      .getConfiguration()
-      .update(
-        "azurePipelinesRunner.pat",
-        pat,
-        vscode.ConfigurationTarget.Global
-      );
-    vscode.window.showInformationMessage("Settings saved successfully!");
-  } else {
-    vscode.window.showErrorMessage("Organization and PAT are required.");
+  if (selection === "Add Account") {
+    vscode.commands.executeCommand("azurePipelinesRunner.addAccount");
+  } else if (selection === "Learn More") {
+    vscode.env.openExternal(
+      vscode.Uri.parse(
+        "https://github.com/pedroccaetano/azure-pipeline-runner#readme"
+      )
+    );
   }
 }

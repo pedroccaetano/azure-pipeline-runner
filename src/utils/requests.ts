@@ -12,16 +12,20 @@ import {
 } from "../types/types";
 import { getAxiosInstance } from "./api";
 import { BuildTimeline } from "../types/stages";
+import { AccountManager } from "../services/account-manager";
 
 export async function getConfiguration() {
-  const pat = (await vscode.workspace
-    .getConfiguration()
-    .get("azurePipelinesRunner.pat")) as string;
-  const organization = (await vscode.workspace
-    .getConfiguration()
-    .get("azurePipelinesRunner.organization")) as string;
+  const accountManager = AccountManager.getInstance();
+  const activeAccount = await accountManager.getActiveAccount();
 
-  return { pat, organization };
+  if (!activeAccount) {
+    throw new Error("No active account. Please add an account first.");
+  }
+
+  return {
+    pat: activeAccount.pat,
+    organization: activeAccount.organization,
+  };
 }
 
 export async function getProjects(): Promise<Project[]> {
