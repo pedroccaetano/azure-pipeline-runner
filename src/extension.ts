@@ -3,7 +3,6 @@ import { PipelineTreeDataProvider } from "./providers/pipeline/pipeline-tree-dat
 import { BuildTreeDataProvider } from "./providers/build/build-tree-data-provider";
 import { StageTreeDataProvider } from "./providers/stage/stage-tree-data-provider";
 import { showWelcome } from "./welcome";
-import { register } from "module";
 import { registerCommands } from "./commands/register-commands";
 
 const pipelineTreeDataProvider = new PipelineTreeDataProvider();
