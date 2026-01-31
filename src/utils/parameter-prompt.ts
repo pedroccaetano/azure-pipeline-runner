@@ -103,8 +103,37 @@ export async function collectParameterValues(
 
       // Preserve original type for numbers
       resultValue = parseValueByType(selectedItem.label, param.type);
+    } else if (param.type === 'boolean') {
+      // Boolean type: show quick pick with true/false options
+      const defaultBool = param.default === true || param.default === 'true' || param.default === 'True';
+      const boolOptions = [
+        {
+          label: 'true',
+          description: defaultBool ? '(default)' : undefined,
+          picked: defaultBool,
+        },
+        {
+          label: 'false',
+          description: !defaultBool && hasDefault ? '(default)' : undefined,
+          picked: !defaultBool && hasDefault,
+        },
+      ];
+
+      const selectedBool = await vscode.window.showQuickPick(boolOptions, {
+        placeHolder: hasDefault
+          ? `Select value for parameter: ${displayName} (default: ${defaultDisplayValue})`
+          : `Select value for parameter: ${displayName}`,
+        title: `Pipeline Parameter: ${displayName}`,
+        ignoreFocusOut: true,
+      });
+
+      if (selectedBool === undefined) {
+        return null;
+      }
+
+      resultValue = selectedBool.label === 'true';
     } else {
-      // Free text input for string, number, boolean, object, stepList
+      // Free text input for string, number, object, stepList
       const placeholder = hasDefault
         ? `Default: ${defaultDisplayValue}`
         : "Enter a value";
