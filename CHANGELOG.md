@@ -2,9 +2,13 @@
 
 All notable changes to the "Azure Pipelines Runner" extension will be documented in this file.
 
+## [0.0.7]
+
+- Trigger pipeline runs and retrigger builds from VS Code [#19](https://github.com/pedroccaetano/azure-pipeline-runner/pull/19) by @JtMotoX
+
 ## [0.0.6]
 
-- Sort projects and pipelines for better organization [#18](https://github.com/pedroccaetano/azure-pipeline-runner/pull/18) by @JtMotox
+- Sort projects and pipelines for better organization [#18](https://github.com/pedroccaetano/azure-pipeline-runner/pull/18) by @JtMotoX
 
 ## [0.0.5] 
 
