@@ -16,6 +16,7 @@ function formatDisplayValue(value: unknown): string {
 
 /**
  * Parse a string value back to its original type based on parameter type
+ * For objects, returns the string as-is (YAML or JSON format)
  */
 function parseValueByType(value: string, paramType?: string): TemplateParameterValue {
   if (paramType === 'boolean') {
@@ -26,11 +27,8 @@ function parseValueByType(value: string, paramType?: string): TemplateParameterV
     return isNaN(num) ? value : num;
   }
   if (paramType === 'object' || paramType === 'stepList') {
-    try {
-      return JSON.parse(value);
-    } catch {
-      return value;
-    }
+    // Return as string (YAML or JSON format)
+    return value;
   }
   return value;
 }
@@ -76,7 +74,9 @@ export async function collectParameterValues(
         return null;
       }
 
-      resultValue = selectedItems.map((item) => item.label);
+      // Convert array to YAML string format
+      const yamlArray = selectedItems.map((item) => `- ${item.label}`).join('\n');
+      resultValue = yamlArray;
     } else if (param.values && param.values.length > 0) {
       // Single-select with predefined values
       const quickPickItems = param.values.map((val) => {
