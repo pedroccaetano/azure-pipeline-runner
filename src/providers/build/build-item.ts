@@ -34,27 +34,40 @@ export class BuildItem extends vscode.TreeItem {
     ) {
       const build = this.builds[0];
       let iconName = "";
-      switch (build.result) {
-        case "succeeded":
-          iconName = "succeeded.svg";
-          break;
-        case "failed":
-          iconName = "failed.svg";
-          break;
-        case "canceled":
-          iconName = "canceled.svg";
-          break;
-        case "partiallySucceeded":
-          iconName = "partiallySucceeded.svg";
-          break;
-        default:
-          if (build.status === "inProgress") {
+      
+      // Check result first (for completed builds)
+      if (build.result) {
+        switch (build.result) {
+          case "succeeded":
+            iconName = "succeeded.svg";
+            break;
+          case "failed":
+            iconName = "failed.svg";
+            break;
+          case "canceled":
+            iconName = "canceled.svg";
+            break;
+          case "partiallySucceeded":
+            iconName = "partiallySucceeded.svg";
+            break;
+        }
+      }
+      
+      // If no result yet, check status (for in-progress/queued builds)
+      if (!iconName) {
+        switch (build.status) {
+          case "inProgress":
+            iconName = "inProgress.svg";
+            break;
+          case "notStarted":
+          case "postponed":
+          case "none":
             iconName = "clock.svg";
             break;
-          }
-
-          iconName = "";
-          break;
+          default:
+            iconName = "clock.svg";
+            break;
+        }
       }
       return {
         light: path.join(

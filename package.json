@@ -122,6 +122,19 @@
           "light": "resources/light/plus.svg",
           "dark": "resources/dark/plus.svg"
         }
+      },
+      {
+        "command": "azurePipelinesRunner.runPipelineFromBranch",
+        "title": "Run Pipeline from Branch",
+        "icon": {
+          "light": "resources/light/play.svg",
+          "dark": "resources/dark/play.svg"
+        }
+      },
+      {
+        "command": "azurePipelinesRunner.retriggerBuild",
+        "title": "Retrigger Build",
+        "icon": "$(debug-restart)"
       }
     ],
     "menus": {
@@ -134,7 +147,7 @@
         {
           "command": "azurePipelinesRunner.refreshBuilds",
           "when": "view == azurePipelineBuilds",
-          "group": "navigation"
+          "group": "navigation@3"
         },
         {
           "command": "azurePipelinesRunner.refreshStages",
@@ -142,9 +155,14 @@
           "group": "navigation"
         },
         {
+          "command": "azurePipelinesRunner.runPipelineFromBranch",
+          "when": "view == azurePipelineBuilds",
+          "group": "navigation@1"
+        },
+        {
           "command": "azurePipelinesRunner.loadMoreBuilds",
           "when": "view == azurePipelineBuilds",
-          "group": "navigation"
+          "group": "navigation@2"
         }
       ],
       "view/item/context": [
@@ -154,9 +172,14 @@
           "group": "inline"
         },
         {
+          "command": "azurePipelinesRunner.retriggerBuild",
+          "when": "viewItem == build",
+          "group": "inline@1"
+        },
+        {
           "command": "azurePipelinesRunner.openBuild",
           "when": "viewItem == build",
-          "group": "inline"
+          "group": "inline@2"
         },
         {
           "command": "azurePipelinesRunner.openStage",
@@ -203,6 +226,7 @@
     "test": "vscode-test"
   },
   "devDependencies": {
+    "@types/js-yaml": "^4.0.9",
     "@types/mocha": "^10.0.9",
     "@types/node": "20.x",
     "@types/vscode": "^1.95.0",
@@ -214,6 +238,7 @@
     "typescript": "^5.6.3"
   },
   "dependencies": {
-    "axios": "^1.7.7"
+    "axios": "^1.7.7",
+    "js-yaml": "^4.1.1"
   }
 }
