@@ -10,9 +10,24 @@ It helps you keep track of builds, inspect logs, and understand pipeline status 
 
 ## Get started
 
-To start using Azure Pipelines Runner, you only need an Azure DevOps organization and a Personal Access Token (PAT).
+To start using Azure Pipelines Runner, simply add your Azure DevOps account through the Accounts view.
 
-Once configured, the extension will automatically load your projects, pipelines, and builds into the VS Code Explorer.
+You'll need:
+- Your Azure DevOps organization name
+- A Personal Access Token (PAT)
+
+Once added, the extension will automatically load your projects, pipelines, and builds into the VS Code Explorer.
+
+---
+
+## Manage multiple accounts
+
+Azure Pipelines Runner supports multiple Azure DevOps accounts:
+
+- Add accounts through the Accounts view in the Explorer
+- Switch between accounts to view different organizations
+- Credentials are stored securely using VS Code's Secret Storage
+- Legacy credentials from `settings.json` are automatically migrated to secure storage
 
 ---
 
@@ -57,14 +72,9 @@ To use this extension, you will need:
 
 ## Extension settings
 
-The following settings are required to configure the extension:
+No manual configuration in `settings.json` is required. Accounts are managed through the Accounts view in the Explorer.
 
-```json
-{
-  "azurePipelinesRunner.organization": "your-organization",
-  "azurePipelinesRunner.pat": "your-personal-access-token"
-}
-```
+**Note:** If you previously configured credentials in `settings.json`, they will be automatically migrated to secure storage when the extension activates.
 
 ---
 

@@ -3,6 +3,9 @@ import { Pipeline, Project, TemplateParameters } from "../types/types";
 import { PipelineTreeDataProvider } from "../providers/pipeline/pipeline-tree-data-provider";
 import { BuildTreeDataProvider } from "../providers/build/build-tree-data-provider";
 import { StageTreeDataProvider } from "../providers/stage/stage-tree-data-provider";
+import { AccountTreeDataProvider } from "../providers/account/account-tree-data-provider";
+import { AccountManager } from "../services/account-manager";
+import { AccountData } from "../types/account";
 import { Build } from "../types/builds";
 import { TimelineRecord } from "../types/stages";
 import {
@@ -26,10 +29,189 @@ const openExternalLink = (url: string) => {
 
 export function registerCommands(
   context: vscode.ExtensionContext,
+  accountManager: AccountManager,
+  accountTreeDataProvider: AccountTreeDataProvider,
   pipelineTreeDataProvider: PipelineTreeDataProvider,
   buildTreeDataProvider: BuildTreeDataProvider,
-  stageTreeDataProvider: StageTreeDataProvider
+  stageTreeDataProvider: StageTreeDataProvider,
+  pipelinesTreeView?: vscode.TreeView<unknown>,
+  buildsTreeView?: vscode.TreeView<unknown>,
+  stagesTreeView?: vscode.TreeView<unknown>
 ) {
+  // Account Commands
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      "azurePipelinesRunner.addAccount",
+      async () => {
+        try {
+          const organization = await vscode.window.showInputBox({
+            prompt: "Enter your Azure DevOps organization name",
+            placeHolder: "Organization name",
+            validateInput: (value) => {
+              if (!value || value.trim() === "") {
+                return "Organization name is required";
+              }
+              return null;
+            },
+          });
+
+          if (!organization) {
+            return;
+          }
+
+          const pat = await vscode.window.showInputBox({
+            prompt: "Enter your Personal Access Token (PAT)",
+            placeHolder: "PAT",
+            password: true,
+            validateInput: (value) => {
+              if (!value || value.trim() === "") {
+                return "PAT is required";
+              }
+              return null;
+            },
+          });
+
+          if (!pat) {
+            return;
+          }
+
+          const note = await vscode.window.showInputBox({
+            prompt: "Enter a note to identify this account (optional)",
+            placeHolder: "e.g., Work PAT, Personal, Prod Access",
+          });
+
+          const newAccount = await vscode.window.withProgress(
+            {
+              location: vscode.ProgressLocation.Notification,
+              title: "Validating credentials...",
+              cancellable: false,
+            },
+            async () => {
+              return await accountManager.addAccount(organization.trim(), pat.trim(), note?.trim() || "");
+            }
+          );
+
+          // Automatically switch to the newly added account
+          await accountManager.setActiveAccount(newAccount.id);
+
+          vscode.window.showInformationMessage(
+            `Account added and switched to ${organization}`
+          );
+
+          // Refresh all views
+          accountTreeDataProvider.refresh();
+          pipelineTreeDataProvider.refresh();
+
+          // Expand and focus Pipelines view
+          if (pipelinesTreeView) {
+            try {
+              await vscode.commands.executeCommand("azurePipelineView.focus");
+            } catch (error) {
+              // Silently fail if command doesn't work
+            }
+          }
+          buildTreeDataProvider.refresh();
+          stageTreeDataProvider.refresh();
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "Unknown error";
+          vscode.window.showErrorMessage(`Failed to add account: ${message}`);
+        }
+      }
+    )
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      "azurePipelinesRunner.switchAccount",
+      async (account: AccountData) => {
+        try {
+          await accountManager.setActiveAccount(account.id);
+          vscode.window.showInformationMessage(
+            `Switched to ${account.organization} (${account.username})`
+          );
+
+          // Refresh all views
+          accountTreeDataProvider.refresh();
+          pipelineTreeDataProvider.refresh();
+          buildTreeDataProvider.refresh();
+          stageTreeDataProvider.refresh();
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "Unknown error";
+          vscode.window.showErrorMessage(`Failed to switch account: ${message}`);
+        }
+      }
+    )
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      "azurePipelinesRunner.editAccountNote",
+      async (item: { account: AccountData }) => {
+        try {
+          const account = item.account;
+          const newNote = await vscode.window.showInputBox({
+            prompt: "Enter a new note for this account",
+            placeHolder: "e.g., Work PAT, Personal, Prod Access",
+            value: account.note,
+          });
+
+          if (newNote === undefined) {
+            return; // User cancelled
+          }
+
+          await accountManager.updateAccount(account.id, { note: newNote.trim() });
+          vscode.window.showInformationMessage("Account note updated");
+          accountTreeDataProvider.refresh();
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "Unknown error";
+          vscode.window.showErrorMessage(`Failed to update note: ${message}`);
+        }
+      }
+    )
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      "azurePipelinesRunner.deleteAccount",
+      async (item: { account: AccountData }) => {
+        try {
+          const account = item.account;
+          const confirm = await vscode.window.showWarningMessage(
+            `Are you sure you want to delete the account for "${account.organization}" (${account.username})?`,
+            { modal: true },
+            "Delete"
+          );
+
+          if (confirm !== "Delete") {
+            return;
+          }
+
+          await accountManager.deleteAccount(account.id);
+          vscode.window.showInformationMessage("Account deleted");
+
+          // Refresh all views
+          accountTreeDataProvider.refresh();
+          pipelineTreeDataProvider.refresh();
+          buildTreeDataProvider.refresh();
+          stageTreeDataProvider.refresh();
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "Unknown error";
+          vscode.window.showErrorMessage(`Failed to delete account: ${message}`);
+        }
+      }
+    )
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      "azurePipelinesRunner.refreshAccounts",
+      () => {
+        accountTreeDataProvider.refresh();
+      }
+    )
+  );
+
+  // Existing commands
   context.subscriptions.push(
     vscode.commands.registerCommand("azurePipelinesRunner.refreshEntry", () => {
       pipelineTreeDataProvider.refresh();
@@ -162,6 +344,15 @@ export function registerCommands(
       async ({ builds, project }: { builds: Build[]; project: Project }) => {
         const build = builds[0];
         await stageTreeDataProvider.loadStages(build, project);
+        
+        // Expand and focus Stages view
+        if (stagesTreeView) {
+          try {
+            await vscode.commands.executeCommand("azurePipelineStages.focus");
+          } catch (error) {
+            // Silently fail if command doesn't work
+          }
+        }
       }
     )
   );
@@ -179,6 +370,15 @@ export function registerCommands(
         stageTreeDataProvider.refresh();
         buildTreeDataProvider.refresh();
         await buildTreeDataProvider.loadBuilds(pipeline, project);
+        
+        // Expand and focus Builds view
+        if (buildsTreeView) {
+          try {
+            await vscode.commands.executeCommand("azurePipelineBuilds.focus");
+          } catch (error) {
+            // Silently fail if command doesn't work
+          }
+        }
       }
     )
   );
