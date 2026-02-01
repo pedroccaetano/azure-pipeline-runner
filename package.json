@@ -1,7 +1,7 @@
 {
   "name": "azure-pipeline-runner",
   "displayName": "Azure Pipelines Runner",
-  "description": "Azure DevOps pipelines and builds in your VS Code",
+  "description": "Run, monitor, and explore Azure DevOps pipelines directly in VS Code",
   "author": {
     "name": "Pedro Caetano",
     "email": "pedrohenriquedecaldascaetano@gmail.com"
@@ -10,7 +10,7 @@
   "icon": "resources/icon.png",
   "version": "0.0.8",
   "license": "MIT",
-  "homepage": "https://github.com/your-username/azure-pipeline-runner#readme",
+  "homepage": "https://github.com/pedroccaetano/azure-pipeline-runner#readme",
   "repository": {
     "type": "git",
     "url": "https://github.com/pedroccaetano/azure-pipeline-runner.git"
@@ -23,8 +23,16 @@
   },
   "categories": [
     "Azure",
-    "Visualization",
+    "SCM Providers",
     "Other"
+  ],
+  "keywords": [
+    "azure devops",
+    "pipelines",
+    "ci cd",
+    "builds",
+    "devops",
+    "azure pipelines"
   ],
   "activationEvents": [
     "onView:azurePipelinesRunner.azurePipelineView",
