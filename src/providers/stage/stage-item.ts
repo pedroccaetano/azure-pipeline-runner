@@ -11,6 +11,13 @@ export class StageItem extends vscode.TreeItem {
   ) {
     super(label, collapsibleState);
     this.iconPath = this.getIconPath();
+    
+    // Set command to open log when clicking on the stage item
+    this.command = {
+      command: "azurePipelinesRunner.openStageLog",
+      title: "Open Stage Log",
+      arguments: [{ timelineRecord: this.timelineRecord }]
+    };
   }
 
   private getIconPath(): { light: string; dark: string } {
