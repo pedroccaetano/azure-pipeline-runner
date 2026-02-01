@@ -33,7 +33,10 @@ export function registerCommands(
   accountTreeDataProvider: AccountTreeDataProvider,
   pipelineTreeDataProvider: PipelineTreeDataProvider,
   buildTreeDataProvider: BuildTreeDataProvider,
-  stageTreeDataProvider: StageTreeDataProvider
+  stageTreeDataProvider: StageTreeDataProvider,
+  pipelinesTreeView?: vscode.TreeView<unknown>,
+  buildsTreeView?: vscode.TreeView<unknown>,
+  stagesTreeView?: vscode.TreeView<unknown>
 ) {
   // Account Commands
   context.subscriptions.push(
@@ -98,6 +101,15 @@ export function registerCommands(
           // Refresh all views
           accountTreeDataProvider.refresh();
           pipelineTreeDataProvider.refresh();
+
+          // Expand and focus Pipelines view
+          if (pipelinesTreeView) {
+            try {
+              await vscode.commands.executeCommand("azurePipelineView.focus");
+            } catch (error) {
+              // Silently fail if command doesn't work
+            }
+          }
           buildTreeDataProvider.refresh();
           stageTreeDataProvider.refresh();
         } catch (error) {
@@ -332,6 +344,15 @@ export function registerCommands(
       async ({ builds, project }: { builds: Build[]; project: Project }) => {
         const build = builds[0];
         await stageTreeDataProvider.loadStages(build, project);
+        
+        // Expand and focus Stages view
+        if (stagesTreeView) {
+          try {
+            await vscode.commands.executeCommand("azurePipelineStages.focus");
+          } catch (error) {
+            // Silently fail if command doesn't work
+          }
+        }
       }
     )
   );
@@ -349,6 +370,15 @@ export function registerCommands(
         stageTreeDataProvider.refresh();
         buildTreeDataProvider.refresh();
         await buildTreeDataProvider.loadBuilds(pipeline, project);
+        
+        // Expand and focus Builds view
+        if (buildsTreeView) {
+          try {
+            await vscode.commands.executeCommand("azurePipelineBuilds.focus");
+          } catch (error) {
+            // Silently fail if command doesn't work
+          }
+        }
       }
     )
   );

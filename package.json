@@ -243,8 +243,20 @@
     },
     "viewsWelcome": [
       {
+        "view": "azurePipelineAccounts",
+        "contents": "No Azure DevOps accounts connected yet.\n\nConnect your Azure DevOps organization to browse pipelines, builds, and stages directly from VS Code.\n\nGet started:\n\n[Add your first account](command:azurePipelinesRunner.addAccount)\n\n---\n\nRequired PAT scopes:\n\n• Build — Read & Execute\n• Code — Read\n• Release — Read, Write, Execute & Manage\n\n[Learn more](https://github.com/pedroccaetano/azure-pipeline-runner)\n"
+      },
+      {
         "view": "azurePipelineView",
-        "contents": "Welcome to Azure Pipelines Runner!\n\nTo get started, add your Azure DevOps account in the Accounts pane above.\n\nThe PAT should have the following scopes:\n- Build (Read & Execute)\n- Code (Read)\n- Release (Read, Write, Execute, & Manage)\n\n[Add Account](command:azurePipelinesRunner.addAccount)\n\n[Refresh](command:azurePipelinesRunner.refreshEntry)"
+        "contents": "No pipelines available.\n\nConnect an account or select a different Azure DevOps project."
+      },
+      {
+        "view": "azurePipelineBuilds",
+        "contents": "No builds to display.\n\nSelect a pipeline from the Pipelines view above to see its builds."
+      },
+      {
+        "view": "azurePipelineStages",
+        "contents": "No stages to display.\n\nSelect a build from the Builds view above to view its stages."
       }
     ],
     "configuration": {
