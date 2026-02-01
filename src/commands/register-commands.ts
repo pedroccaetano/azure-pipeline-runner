@@ -1,4 +1,7 @@
 import * as vscode from "vscode";
+import * as fs from "fs";
+import * as path from "path";
+import * as os from "os";
 import { Pipeline, Project, TemplateParameters } from "../types/types";
 import { PipelineTreeDataProvider } from "../providers/pipeline/pipeline-tree-data-provider";
 import { BuildTreeDataProvider } from "../providers/build/build-tree-data-provider";
@@ -36,7 +39,8 @@ export function registerCommands(
   stageTreeDataProvider: StageTreeDataProvider,
   pipelinesTreeView?: vscode.TreeView<unknown>,
   buildsTreeView?: vscode.TreeView<unknown>,
-  stagesTreeView?: vscode.TreeView<unknown>
+  stagesTreeView?: vscode.TreeView<unknown>,
+  outputChannel?: vscode.OutputChannel
 ) {
   // Account Commands
   context.subscriptions.push(
@@ -279,15 +283,46 @@ export function registerCommands(
           }
 
           const logContent = await getStageLog(url);
-          const formattedLog = logContent.value
-            .map((line) => line.slice(29))
-            .join("\n");
-          const document = await vscode.workspace.openTextDocument({
-            content: formattedLog,
-            language: "plaintext",
-          });
+          const formattedLog = logContent.value.map((line) => line.slice(29));
 
-          await vscode.window.showTextDocument(document);
+          // Get the configured log viewer preference
+          const config = vscode.workspace.getConfiguration("azurePipelinesRunner");
+          const logViewer = config.get<string>("logViewer", "outputChannel");
+
+          if (logViewer === "file") {
+            // Save to temporary file and open in editor
+            const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+            const sanitizedStageName = (timelineRecord.name || "Unknown")
+              .replace(/[^a-zA-Z0-9_-]/g, "_")
+              .substring(0, 50);
+            const fileName = `stage-log-${sanitizedStageName}-${timestamp}.log`;
+            const tempFilePath = path.join(os.tmpdir(), fileName);
+
+            const logText = [
+              `=== Stage Log: ${timelineRecord.name || "Unknown"} ===`,
+              `=== Build ID: ${timelineRecord.buildId} ===`,
+              `=== Timestamp: ${new Date().toLocaleString()} ===`,
+              "",
+              ...formattedLog,
+            ].join("\n");
+
+            fs.writeFileSync(tempFilePath, logText, "utf-8");
+
+            const doc = await vscode.workspace.openTextDocument(tempFilePath);
+            await vscode.window.showTextDocument(doc, { preview: false });
+          } else {
+            // Use Output Channel (default)
+            if (!outputChannel) {
+              vscode.window.showErrorMessage("Output channel is not available.");
+              return;
+            }
+
+            outputChannel.clear();
+            outputChannel.appendLine(`=== Stage Log: ${timelineRecord.name || "Unknown"} ===`);
+            outputChannel.appendLine("");
+            formattedLog.forEach((line) => outputChannel.appendLine(line));
+            outputChannel.show();
+          }
         } catch (error) {
           let errorMessage = "Unknown error";
           if (error instanceof Error) {
@@ -308,6 +343,44 @@ export function registerCommands(
         "azurePipelinesRunner"
       );
     })
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      "azurePipelinesRunner.toggleLogViewer",
+      async () => {
+        const config = vscode.workspace.getConfiguration("azurePipelinesRunner");
+        const currentViewer = config.get<string>("logViewer", "outputChannel");
+
+        const options = [
+          {
+            label: "$(output) Output Channel",
+            description: currentViewer === "outputChannel" ? "(Current)" : "",
+            detail: "Open logs in the Output Channel panel",
+            value: "outputChannel"
+          },
+          {
+            label: "$(file-code) File Editor",
+            description: currentViewer === "file" ? "(Current)" : "",
+            detail: "Save logs to a temporary file and open in editor",
+            value: "file"
+          }
+        ];
+
+        const selected = await vscode.window.showQuickPick(options, {
+          placeHolder: "Choose how to view stage logs",
+          title: "Log Viewer Settings"
+        });
+
+        if (selected && selected.value !== currentViewer) {
+          await config.update("logViewer", selected.value, vscode.ConfigurationTarget.Global);
+          const viewerName = selected.value === "outputChannel" ? "Output Channel" : "File Editor";
+          vscode.window.showInformationMessage(
+            `Stage logs will now open in: ${viewerName}`
+          );
+        }
+      }
+    )
   );
 
   context.subscriptions.push(

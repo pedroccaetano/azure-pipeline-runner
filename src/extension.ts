@@ -37,6 +37,10 @@ export async function activate(context: vscode.ExtensionContext) {
   // Store tree views in context for later use
   context.subscriptions.push(accountsTreeView, pipelinesTreeView, buildsTreeView, stagesTreeView);
 
+  // Create output channel for pipeline logs
+  const outputChannel = vscode.window.createOutputChannel("Azure Pipeline Logs");
+  context.subscriptions.push(outputChannel);
+
   // Register commands
   registerCommands(
     context,
@@ -47,7 +51,8 @@ export async function activate(context: vscode.ExtensionContext) {
     stageTreeDataProvider,
     pipelinesTreeView,
     buildsTreeView,
-    stagesTreeView
+    stagesTreeView,
+    outputChannel
   );
 
   // Check if any accounts exist

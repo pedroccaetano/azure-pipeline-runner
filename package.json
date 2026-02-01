@@ -113,18 +113,10 @@
       },
       {
         "command": "azurePipelinesRunner.openStage",
-        "title": "Open Build",
+        "title": "Open Stage",
         "icon": {
           "light": "resources/light/browser.svg",
           "dark": "resources/dark/browser.svg"
-        }
-      },
-      {
-        "command": "azurePipelinesRunner.openStageLog",
-        "title": "Open Build",
-        "icon": {
-          "light": "resources/light/logs.svg",
-          "dark": "resources/dark/logs.svg"
         }
       },
       {
@@ -171,6 +163,11 @@
         "command": "azurePipelinesRunner.refreshAccounts",
         "title": "Refresh Accounts",
         "icon": "$(refresh)"
+      },
+      {
+        "command": "azurePipelinesRunner.toggleLogViewer",
+        "title": "Log Viewer Settings",
+        "icon": "$(ellipsis)"
       }
     ],
     "menus": {
@@ -198,7 +195,12 @@
         {
           "command": "azurePipelinesRunner.refreshStages",
           "when": "view == azurePipelineStages",
-          "group": "navigation"
+          "group": "navigation@1"
+        },
+        {
+          "command": "azurePipelinesRunner.toggleLogViewer",
+          "when": "view == azurePipelineStages",
+          "group": "navigation@2"
         },
         {
           "command": "azurePipelinesRunner.runPipelineFromBranch",
@@ -241,11 +243,6 @@
           "command": "azurePipelinesRunner.openStage",
           "when": "viewItem == stage",
           "group": "inline"
-        },
-        {
-          "command": "azurePipelinesRunner.openStageLog",
-          "when": "viewItem == stage",
-          "group": "inline"
         }
       ]
     },
@@ -270,7 +267,21 @@
     "configuration": {
       "type": "object",
       "title": "Azure Pipelines Runner",
-      "properties": {}
+      "properties": {
+        "azurePipelinesRunner.logViewer": {
+          "type": "string",
+          "enum": [
+            "outputChannel",
+            "file"
+          ],
+          "enumDescriptions": [
+            "Open logs in the Output Channel panel",
+            "Save logs to a temporary file and open in editor"
+          ],
+          "default": "outputChannel",
+          "description": "Choose how to view stage logs"
+        }
+      }
     }
   },
   "scripts": {
