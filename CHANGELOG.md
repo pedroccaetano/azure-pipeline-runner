@@ -2,6 +2,11 @@
 
 All notable changes to the "Azure Pipelines Runner" extension will be documented in this file.
 
+## [0.0.8]
+
+- Multi-account support with secure credential storage [#20](https://github.com/pedroccaetano/azure-pipeline-runner/pull/20) by @JtMotoX
+- Configurable log viewer options (Output Channel or File) [#21](https://github.com/pedroccaetano/azure-pipeline-runner/pull/21)
+
 ## [0.0.7]
 
 - Trigger pipeline runs and retrigger builds from VS Code [#19](https://github.com/pedroccaetano/azure-pipeline-runner/pull/19) by @JtMotoX
