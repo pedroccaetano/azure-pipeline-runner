@@ -62,7 +62,7 @@ export class StageItem extends vscode.TreeItem {
         };
       default:
         if (this.timelineRecord.state === "inProgress") {
-          iconName = "clock.svg";
+          iconName = "inProgress.svg";
           break;
         }
 
