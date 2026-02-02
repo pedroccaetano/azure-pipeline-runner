@@ -345,6 +345,149 @@ export function registerCommands(
     })
   );
 
+  // Approve Stage Command
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      "azurePipelinesRunner.approveStage",
+      async ({ timelineRecord }: { timelineRecord: TimelineRecord }) => {
+        try {
+          // Get current account
+          const accounts = await accountManager.getAccounts();
+          const activeAccount = accounts.find((a) => a.isActive);
+          
+          if (!activeAccount) {
+            vscode.window.showErrorMessage(
+              "No active account. Please add and activate an account first."
+            );
+            return;
+          }
+
+          // Get project and build context from the stage tree data provider
+          const project = stageTreeDataProvider.getCurrentProject();
+          const build = stageTreeDataProvider.getCurrentBuild();
+
+          if (!project || !build) {
+            vscode.window.showErrorMessage(
+              "Unable to determine project or build context."
+            );
+            return;
+          }
+
+          // Get the approval ID for this stage
+          const approvalId = await vscode.window.withProgress(
+            {
+              location: vscode.ProgressLocation.Notification,
+              title: "Fetching approval details...",
+              cancellable: false,
+            },
+            async () => {
+              const { getApprovalIdForStage } = await import(
+                "../utils/approval-detection.js"
+              );
+              return await getApprovalIdForStage(
+                activeAccount.organization,
+                project.name,
+                build.id,
+                timelineRecord.id,
+                activeAccount.pat
+              );
+            }
+          );
+
+          if (!approvalId) {
+            vscode.window.showErrorMessage(
+              "Unable to find approval ID for this stage. The stage might not require approval."
+            );
+            return;
+          }
+
+          // Show QuickPick for approve/reject decision
+          const decision = await vscode.window.showQuickPick(
+            [
+              {
+                label: "$(check) Approve",
+                description: "Approve this stage to continue the pipeline",
+                value: "approve"
+              },
+              {
+                label: "$(x) Reject",
+                description: "Reject this stage and fail the pipeline",
+                value: "reject"
+              }
+            ],
+            {
+              placeHolder: `Choose action for stage: ${timelineRecord.name}`,
+              title: "Stage Approval"
+            }
+          );
+
+          if (!decision) {
+            return; // User cancelled
+          }
+
+          // Prompt for optional comment
+          const comment = await vscode.window.showInputBox({
+            prompt: "Enter an optional comment (press Enter to skip)",
+            placeHolder: "Optional comment",
+            value: ""
+          });
+
+          if (comment === undefined) {
+            return; // User cancelled
+          }
+
+          // Perform the approval/rejection
+          const actionText = decision.value === "approve" ? "Approving" : "Rejecting";
+          await vscode.window.withProgress(
+            {
+              location: vscode.ProgressLocation.Notification,
+              title: `${actionText} stage: ${timelineRecord.name}...`,
+              cancellable: false,
+            },
+            async () => {
+              const { approveStage, rejectStage } = await import(
+                "../services/approval-service.js"
+              );
+
+              if (decision.value === "approve") {
+                await approveStage(
+                  activeAccount.organization,
+                  project.name,
+                  approvalId,
+                  comment,
+                  activeAccount.pat
+                );
+              } else {
+                await rejectStage(
+                  activeAccount.organization,
+                  project.name,
+                  approvalId,
+                  comment,
+                  activeAccount.pat
+                );
+              }
+            }
+          );
+
+          const actionPast = decision.value === "approve" ? "approved" : "rejected";
+          vscode.window.showInformationMessage(
+            `Stage "${timelineRecord.name}" ${actionPast} successfully`
+          );
+
+          // Refresh the stage tree to show updated status
+          setTimeout(() => {
+            stageTreeDataProvider.refreshStages();
+          }, 1000); // Give API a moment to update
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "Unknown error";
+          vscode.window.showErrorMessage(
+            `Failed to process stage approval: ${message}`
+          );
+        }
+      }
+    )
+  );
+
   context.subscriptions.push(
     vscode.commands.registerCommand(
       "azurePipelinesRunner.toggleLogViewer",

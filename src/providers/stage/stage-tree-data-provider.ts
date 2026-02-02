@@ -41,6 +41,14 @@ export class StageTreeDataProvider
     this.updatePollingState();
   }
 
+  getCurrentProject(): Project | undefined {
+    return this.project;
+  }
+
+  getCurrentBuild(): Build | undefined {
+    return this.build;
+  }
+
   pausePolling(): void {
     if (this.pollingIntervalId) {
       clearInterval(this.pollingIntervalId);

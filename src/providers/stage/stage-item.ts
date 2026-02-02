@@ -14,8 +14,16 @@ export class StageItem extends vscode.TreeItem {
     this.iconPath = this.getIconPath();
     this.tooltip = this.getTooltip();
     
+    // Set command for stages waiting for approval (highest priority)
+    if (this.isWaitingForApproval) {
+      this.command = {
+        command: "azurePipelinesRunner.approveStage",
+        title: "Approve or Reject Stage",
+        arguments: [{ timelineRecord: this.timelineRecord }]
+      };
+    }
     // Only set command for tasks (which have logs), not for stages or jobs
-    if (this.timelineRecord.type === "Task" && this.timelineRecord.log) {
+    else if (this.timelineRecord.type === "Task" && this.timelineRecord.log) {
       this.command = {
         command: "azurePipelinesRunner.openStageLog",
         title: "Open Task Log",
