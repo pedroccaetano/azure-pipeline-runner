@@ -35,11 +35,60 @@ export async function activate(context: vscode.ExtensionContext) {
   });
 
   // Store tree views in context for later use
-  context.subscriptions.push(accountsTreeView, pipelinesTreeView, buildsTreeView, stagesTreeView);
+  context.subscriptions.push(
+    accountsTreeView,
+    pipelinesTreeView,
+    buildsTreeView,
+    stagesTreeView,
+    buildTreeDataProvider,
+    stageTreeDataProvider
+  );
+
+  // Listen for view visibility changes to pause/resume polling
+  context.subscriptions.push(
+    buildsTreeView.onDidChangeVisibility((e) => {
+      buildTreeDataProvider.setViewVisible(e.visible);
+    }),
+    stagesTreeView.onDidChangeVisibility((e) => {
+      stageTreeDataProvider.setViewVisible(e.visible);
+    })
+  );
+
+  // Initialize polling context states (both start as inactive/false)
+  vscode.commands.executeCommand(
+    "setContext",
+    "azurePipelinesRunner.buildPollingActive",
+    false
+  );
+  vscode.commands.executeCommand(
+    "setContext",
+    "azurePipelinesRunner.stagePollingActive",
+    false
+  );
 
   // Create output channel for pipeline logs
   const outputChannel = vscode.window.createOutputChannel("Azure Pipeline Logs");
   context.subscriptions.push(outputChannel);
+
+  // Create status bar item for polling toggle
+  const pollingStatusBarItem = vscode.window.createStatusBarItem(
+    vscode.StatusBarAlignment.Right,
+    100
+  );
+  pollingStatusBarItem.command = "azurePipelinesRunner.togglePolling";
+  pollingStatusBarItem.tooltip = "Toggle Azure Pipelines Polling";
+  updatePollingStatusBar(pollingStatusBarItem);
+  pollingStatusBarItem.show();
+  context.subscriptions.push(pollingStatusBarItem);
+
+  // Listen for configuration changes to update status bar
+  context.subscriptions.push(
+    vscode.workspace.onDidChangeConfiguration((e) => {
+      if (e.affectsConfiguration("azurePipelinesRunner.enablePolling")) {
+        updatePollingStatusBar(pollingStatusBarItem);
+      }
+    })
+  );
 
   // Register commands
   registerCommands(
@@ -73,5 +122,20 @@ export async function activate(context: vscode.ExtensionContext) {
 }
 
 
+
+function updatePollingStatusBar(statusBarItem: vscode.StatusBarItem) {
+  const config = vscode.workspace.getConfiguration("azurePipelinesRunner");
+  const isEnabled = config.get<boolean>("enablePolling", true);
+
+  if (isEnabled) {
+    statusBarItem.text = "$(sync)";
+    statusBarItem.tooltip = "Azure Pipelines Polling: Enabled (Click to disable)";
+  } else {
+    statusBarItem.text = "$(sync-ignored)";
+    statusBarItem.tooltip = "Azure Pipelines Polling: Disabled (Click to enable)";
+  }
+  
+  statusBarItem.show();
+}
 
 export function deactivate() {}

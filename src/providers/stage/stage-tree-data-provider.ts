@@ -9,7 +9,7 @@ import { formatDuration } from "../../utils/format-duration";
 const STAGE_CONTEXT_VALUE = "stage";
 
 export class StageTreeDataProvider
-  implements vscode.TreeDataProvider<StageItem>
+  implements vscode.TreeDataProvider<StageItem>, vscode.Disposable
 {
   private _onDidChangeTreeData: vscode.EventEmitter<
     StageItem | undefined | void
@@ -21,10 +21,100 @@ export class StageTreeDataProvider
   private allRecords: TimelineRecord[] = [];
   private project: Project | undefined = undefined;
   private build: Build | undefined = undefined;
+  private pollingIntervalId: NodeJS.Timeout | undefined;
+  private readonly POLLING_INTERVAL = 5000; // 5 seconds
+  private configChangeListener: vscode.Disposable | undefined;
+  private isViewVisible: boolean = true;
+
+  constructor() {
+    // Listen for configuration changes
+    this.configChangeListener = vscode.workspace.onDidChangeConfiguration((e) => {
+      if (e.affectsConfiguration("azurePipelinesRunner.enablePolling")) {
+        this.updatePollingState();
+      }
+    });
+  }
+
+  setViewVisible(visible: boolean): void {
+    this.isViewVisible = visible;
+    this.updatePollingState();
+  }
+
+  pausePolling(): void {
+    if (this.pollingIntervalId) {
+      clearInterval(this.pollingIntervalId);
+      this.pollingIntervalId = undefined;
+    }
+  }
+
+  resumePolling(): void {
+    if (this.shouldPoll() && !this.pollingIntervalId) {
+      this.startPolling();
+    }
+  }
 
   refresh(): void {
     this.records = [];
+    this.stopPolling();
     this._onDidChangeTreeData.fire();
+  }
+
+  private shouldPoll(): boolean {
+    const config = vscode.workspace.getConfiguration("azurePipelinesRunner");
+    const pollingEnabled = config.get<boolean>("enablePolling", true);
+
+    if (!pollingEnabled || !this.isViewVisible) {
+      return false;
+    }
+
+    return this.hasInProgressRecords(this.allRecords);
+  }
+
+  private hasInProgressRecords(records: TimelineRecord[]): boolean {
+    return records.some((record) => {
+      const state = record.state?.toLowerCase();
+      return state === "inprogress" || state === "pending";
+    });
+  }
+
+  private startPolling(): void {
+    if (this.pollingIntervalId) {
+      return; // Already polling
+    }
+
+    this.pollingIntervalId = setInterval(() => {
+      this.refreshStages();
+    }, this.POLLING_INTERVAL);
+    this.updateContextState(true);
+  }
+
+  private stopPolling(): void {
+    if (this.pollingIntervalId) {
+      clearInterval(this.pollingIntervalId);
+      this.pollingIntervalId = undefined;
+      this.updateContextState(false);
+    }
+  }
+
+  private updatePollingState(): void {
+    if (this.shouldPoll() && !this.pollingIntervalId) {
+      this.startPolling();
+    } else if (!this.shouldPoll() && this.pollingIntervalId) {
+      this.stopPolling();
+    }
+  }
+
+  private updateContextState(active: boolean): void {
+    vscode.commands.executeCommand(
+      "setContext",
+      "azurePipelinesRunner.stagePollingActive",
+      active
+    );
+  }
+
+  dispose(): void {
+    this.stopPolling();
+    this.configChangeListener?.dispose();
   }
 
   getTreeItem(element: StageItem): vscode.TreeItem {
@@ -52,6 +142,9 @@ export class StageTreeDataProvider
   }
 
   async loadStages(build: Build, project: Project): Promise<void> {
+    // CRITICAL: Stop any existing polling from previous build
+    this.stopPolling();
+
     await vscode.window.withProgress(
       {
         location: vscode.ProgressLocation.Window,
@@ -87,6 +180,9 @@ export class StageTreeDataProvider
         this._onDidChangeTreeData.fire();
 
         progress.report({ increment: 100 });
+
+        // Start polling if needed for the new build
+        this.updatePollingState();
       }
     );
   }
@@ -119,10 +215,20 @@ export class StageTreeDataProvider
   }
 
   public async refreshStages() {
+    // Check if polling is enabled
+    const config = vscode.workspace.getConfiguration("azurePipelinesRunner");
+    const pollingEnabled = config.get<boolean>("enablePolling", true);
+    if (!pollingEnabled) {
+      this.stopPolling();
+      return;
+    }
+
     if (!this.build || !this.project) {
       return;
     }
 
     await this.loadStages(this.build, this.project);
+
+    // Note: updatePollingState() is already called within loadStages()
   }
 }

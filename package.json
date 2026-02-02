@@ -168,6 +168,11 @@
         "command": "azurePipelinesRunner.toggleLogViewer",
         "title": "Log Viewer Settings",
         "icon": "$(ellipsis)"
+
+      },
+      {
+        "command": "azurePipelinesRunner.togglePolling",
+        "title": "Toggle Azure Pipelines Polling"
       }
     ],
     "menus": {
@@ -190,12 +195,12 @@
         {
           "command": "azurePipelinesRunner.refreshBuilds",
           "when": "view == azurePipelineBuilds",
-          "group": "navigation@3"
+          "group": "navigation@2"
         },
         {
           "command": "azurePipelinesRunner.refreshStages",
           "when": "view == azurePipelineStages",
-          "group": "navigation@1"
+          "group": "navigation@0"
         },
         {
           "command": "azurePipelinesRunner.toggleLogViewer",
@@ -280,6 +285,18 @@
           ],
           "default": "outputChannel",
           "description": "Choose how to view stage logs"
+        },
+        "azurePipelinesRunner.enablePolling": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable automatic polling to refresh builds and stages when they are in progress"
+        },
+        "azurePipelinesRunner.pollingIntervalSeconds": {
+          "type": "number",
+          "default": 5,
+          "minimum": 1,
+          "maximum": 60,
+          "description": "Polling interval in seconds for refreshing builds and stages (1-60 seconds)"
         }
       }
     }

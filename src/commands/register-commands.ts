@@ -743,4 +743,19 @@ export function registerCommands(
       }
     )
   );
+
+  // Toggle Polling Command
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      "azurePipelinesRunner.togglePolling",
+      async () => {
+        const config = vscode.workspace.getConfiguration("azurePipelinesRunner");
+        const currentValue = config.get<boolean>("enablePolling", true);
+        await config.update("enablePolling", !currentValue, vscode.ConfigurationTarget.Global);
+        
+        const status = !currentValue ? "enabled" : "disabled";
+        vscode.window.showInformationMessage(`Azure Pipelines polling ${status}`);
+      }
+    )
+  );
 }
