@@ -168,16 +168,7 @@
         "command": "azurePipelinesRunner.toggleLogViewer",
         "title": "Log Viewer Settings",
         "icon": "$(ellipsis)"
-      },
-      {
-        "command": "azurePipelinesRunner.toggleBuildPolling",
-        "title": "Toggle Auto-Refresh",
-        "icon": "$(sync)"
-      },
-      {
-        "command": "azurePipelinesRunner.toggleStagePolling",
-        "title": "Toggle Auto-Refresh",
-        "icon": "$(sync)"
+
       }
     ],
     "menus": {
@@ -198,38 +189,14 @@
           "group": "navigation"
         },
         {
-          "command": "azurePipelinesRunner.toggleBuildPolling",
-          "when": "view == azurePipelineBuilds && !azurePipelinesRunner.buildPollingActive",
-          "group": "navigation@2",
-          "icon": "$(sync-ignored)"
-        },
-        {
-          "command": "azurePipelinesRunner.toggleBuildPolling",
-          "when": "view == azurePipelineBuilds && azurePipelinesRunner.buildPollingActive",
-          "group": "navigation@2",
-          "icon": "$(sync)"
-        },
-        {
           "command": "azurePipelinesRunner.refreshBuilds",
           "when": "view == azurePipelineBuilds",
-          "group": "navigation@3"
-        },
-        {
-          "command": "azurePipelinesRunner.toggleStagePolling",
-          "when": "view == azurePipelineStages && !azurePipelinesRunner.stagePollingActive",
-          "group": "navigation@0",
-          "icon": "$(sync-ignored)"
-        },
-        {
-          "command": "azurePipelinesRunner.toggleStagePolling",
-          "when": "view == azurePipelineStages && azurePipelinesRunner.stagePollingActive",
-          "group": "navigation@0",
-          "icon": "$(sync)"
+          "group": "navigation@2"
         },
         {
           "command": "azurePipelinesRunner.refreshStages",
           "when": "view == azurePipelineStages",
-          "group": "navigation@1"
+          "group": "navigation@0"
         },
         {
           "command": "azurePipelinesRunner.toggleLogViewer",

@@ -22,7 +22,6 @@ export class BuildTreeDataProvider
   private currentProject?: Project;
   private pollingIntervalId: NodeJS.Timeout | undefined;
   private readonly POLLING_INTERVAL = 5000; // 5 seconds
-  private pollingEnabled: boolean = true;
 
   constructor() {}
 
@@ -75,13 +74,10 @@ export class BuildTreeDataProvider
   }
 
   private updatePollingState(): void {
-    if (this.pollingEnabled && this.shouldPoll() && !this.pollingIntervalId) {
+    if (this.shouldPoll() && !this.pollingIntervalId) {
       this.startPolling();
-    } else if ((!this.pollingEnabled || !this.shouldPoll()) && this.pollingIntervalId) {
+    } else if (!this.shouldPoll() && this.pollingIntervalId) {
       this.stopPolling();
-    } else if (!this.pollingEnabled || !this.shouldPoll()) {
-      // Ensure context is updated even if we weren't polling
-      this.updateContextState(false);
     }
   }
 
@@ -91,20 +87,6 @@ export class BuildTreeDataProvider
       "azurePipelinesRunner.buildPollingActive",
       active
     );
-  }
-
-  public togglePolling(): void {
-    this.pollingEnabled = !this.pollingEnabled;
-    if (this.pollingEnabled) {
-      this.updatePollingState();
-    } else {
-      this.stopPolling();
-      this.updateContextState(false);
-    }
-  }
-
-  public isPollingEnabled(): boolean {
-    return this.pollingEnabled;
   }
 
   dispose(): void {

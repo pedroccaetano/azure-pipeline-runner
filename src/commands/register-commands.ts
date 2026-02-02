@@ -395,19 +395,6 @@ export function registerCommands(
 
   context.subscriptions.push(
     vscode.commands.registerCommand(
-      "azurePipelinesRunner.toggleBuildPolling",
-      async () => {
-        buildTreeDataProvider.togglePolling();
-        const enabled = buildTreeDataProvider.isPollingEnabled();
-        vscode.window.showInformationMessage(
-          `Build auto-refresh ${enabled ? "enabled" : "disabled"}`
-        );
-      }
-    )
-  );
-
-  context.subscriptions.push(
-    vscode.commands.registerCommand(
       "azurePipelinesRunner.loadMoreBuilds",
       async () => {
         await buildTreeDataProvider.loadMoreBuilds();
@@ -420,19 +407,6 @@ export function registerCommands(
       "azurePipelinesRunner.refreshStages",
       async () => {
         await stageTreeDataProvider.refreshStages();
-      }
-    )
-  );
-
-  context.subscriptions.push(
-    vscode.commands.registerCommand(
-      "azurePipelinesRunner.toggleStagePolling",
-      async () => {
-        stageTreeDataProvider.togglePolling();
-        const enabled = stageTreeDataProvider.isPollingEnabled();
-        vscode.window.showInformationMessage(
-          `Stage auto-refresh ${enabled ? "enabled" : "disabled"}`
-        );
       }
     )
   );
