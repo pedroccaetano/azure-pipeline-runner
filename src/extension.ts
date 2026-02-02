@@ -44,6 +44,16 @@ export async function activate(context: vscode.ExtensionContext) {
     stageTreeDataProvider
   );
 
+  // Listen for view visibility changes to pause/resume polling
+  context.subscriptions.push(
+    buildsTreeView.onDidChangeVisibility((e) => {
+      buildTreeDataProvider.setViewVisible(e.visible);
+    }),
+    stagesTreeView.onDidChangeVisibility((e) => {
+      stageTreeDataProvider.setViewVisible(e.visible);
+    })
+  );
+
   // Initialize polling context states (both start as inactive/false)
   vscode.commands.executeCommand(
     "setContext",

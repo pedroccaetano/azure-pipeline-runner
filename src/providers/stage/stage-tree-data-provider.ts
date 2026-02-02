@@ -24,6 +24,7 @@ export class StageTreeDataProvider
   private pollingIntervalId: NodeJS.Timeout | undefined;
   private readonly POLLING_INTERVAL = 5000; // 5 seconds
   private configChangeListener: vscode.Disposable | undefined;
+  private isViewVisible: boolean = true;
 
   constructor() {
     // Listen for configuration changes
@@ -32,6 +33,24 @@ export class StageTreeDataProvider
         this.updatePollingState();
       }
     });
+  }
+
+  setViewVisible(visible: boolean): void {
+    this.isViewVisible = visible;
+    this.updatePollingState();
+  }
+
+  pausePolling(): void {
+    if (this.pollingIntervalId) {
+      clearInterval(this.pollingIntervalId);
+      this.pollingIntervalId = undefined;
+    }
+  }
+
+  resumePolling(): void {
+    if (this.shouldPoll() && !this.pollingIntervalId) {
+      this.startPolling();
+    }
   }
 
   refresh(): void {
@@ -44,7 +63,7 @@ export class StageTreeDataProvider
     const config = vscode.workspace.getConfiguration("azurePipelinesRunner");
     const pollingEnabled = config.get<boolean>("enablePolling", true);
 
-    if (!pollingEnabled) {
+    if (!pollingEnabled || !this.isViewVisible) {
       return false;
     }
 

@@ -22,6 +22,7 @@ export class BuildTreeDataProvider
   private currentProject?: Project;
   private pollingIntervalId: NodeJS.Timeout | undefined;
   private configChangeListener: vscode.Disposable | undefined;
+  private isViewVisible: boolean = true;
 
   constructor() {
     // Listen for configuration changes
@@ -31,6 +32,24 @@ export class BuildTreeDataProvider
         this.updatePollingState();
       }
     });
+  }
+
+  setViewVisible(visible: boolean): void {
+    this.isViewVisible = visible;
+    this.updatePollingState();
+  }
+
+  pausePolling(): void {
+    if (this.pollingIntervalId) {
+      clearInterval(this.pollingIntervalId);
+      this.pollingIntervalId = undefined;
+    }
+  }
+
+  resumePolling(): void {
+    if (this.shouldPoll() && !this.pollingIntervalId) {
+      this.startPolling();
+    }
   }
 
   getCurrentPipeline(): Pipeline | undefined {
@@ -51,7 +70,7 @@ export class BuildTreeDataProvider
     const config = vscode.workspace.getConfiguration("azurePipelinesRunner");
     const pollingEnabled = config.get<boolean>("enablePolling", true);
 
-    if (!pollingEnabled) {
+    if (!pollingEnabled || !this.isViewVisible) {
       return false;
     }
 
