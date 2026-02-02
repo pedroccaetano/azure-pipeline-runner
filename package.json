@@ -281,6 +281,11 @@
           ],
           "default": "outputChannel",
           "description": "Choose how to view stage logs"
+        },
+        "azurePipelinesRunner.enablePolling": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable automatic polling to refresh builds and stages when they are in progress"
         }
       }
     }

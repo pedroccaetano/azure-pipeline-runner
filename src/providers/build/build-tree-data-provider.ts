@@ -22,8 +22,16 @@ export class BuildTreeDataProvider
   private currentProject?: Project;
   private pollingIntervalId: NodeJS.Timeout | undefined;
   private readonly POLLING_INTERVAL = 5000; // 5 seconds
+  private configChangeListener: vscode.Disposable | undefined;
 
-  constructor() {}
+  constructor() {
+    // Listen for configuration changes
+    this.configChangeListener = vscode.workspace.onDidChangeConfiguration((e) => {
+      if (e.affectsConfiguration("azurePipelinesRunner.enablePolling")) {
+        this.updatePollingState();
+      }
+    });
+  }
 
   getCurrentPipeline(): Pipeline | undefined {
     return this.currentPipeline;
@@ -40,6 +48,13 @@ export class BuildTreeDataProvider
   }
 
   private shouldPoll(): boolean {
+    const config = vscode.workspace.getConfiguration("azurePipelinesRunner");
+    const pollingEnabled = config.get<boolean>("enablePolling", true);
+
+    if (!pollingEnabled) {
+      return false;
+    }
+
     return this.builds.some((buildItem) => {
       const build = buildItem.builds?.[0];
       if (!build) {
@@ -91,6 +106,7 @@ export class BuildTreeDataProvider
 
   dispose(): void {
     this.stopPolling();
+    this.configChangeListener?.dispose();
   }
 
   getTreeItem(element: BuildItem): vscode.TreeItem {
@@ -150,6 +166,14 @@ export class BuildTreeDataProvider
   }
 
   async refreshBuilds(): Promise<void> {
+    // Check if polling is enabled
+    const config = vscode.workspace.getConfiguration("azurePipelinesRunner");
+    const pollingEnabled = config.get<boolean>("enablePolling", true);
+    if (!pollingEnabled) {
+      this.stopPolling();
+      return;
+    }
+
     if (this.builds.length === 0) {
       return;
     }
