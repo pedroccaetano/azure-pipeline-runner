@@ -169,6 +169,10 @@
         "title": "Log Viewer Settings",
         "icon": "$(ellipsis)"
 
+      },
+      {
+        "command": "azurePipelinesRunner.togglePolling",
+        "title": "Toggle Azure Pipelines Polling"
       }
     ],
     "menus": {
