@@ -8,7 +8,7 @@
   },
   "publisher": "PedroCaetano",
   "icon": "resources/icon.png",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "license": "MIT",
   "homepage": "https://github.com/pedroccaetano/azure-pipeline-runner#readme",
   "repository": {
@@ -168,7 +168,6 @@
         "command": "azurePipelinesRunner.toggleLogViewer",
         "title": "Log Viewer Settings",
         "icon": "$(ellipsis)"
-
       },
       {
         "command": "azurePipelinesRunner.togglePolling",

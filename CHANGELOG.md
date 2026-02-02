@@ -2,6 +2,14 @@
 
 All notable changes to the "Azure Pipelines Runner" extension will be documented in this file.
 
+## [0.0.9]
+
+- Auto-refresh polling with configurable settings and status bar control [#22](https://github.com/pedroccaetano/azure-pipeline-runner/pull/22) by @JtMotoX
+  - Introduced configurable polling for builds and stages with automatic refresh
+  - Added status bar toggle to enable/disable polling
+  - Implemented configurable polling interval (1-60 seconds, default: 5 seconds)
+  - Polling pauses/resumes based on view visibility for better performance
+
 ## [0.0.8]
 
 - Multi-account support with secure credential storage [#20](https://github.com/pedroccaetano/azure-pipeline-runner/pull/20) by @JtMotoX
