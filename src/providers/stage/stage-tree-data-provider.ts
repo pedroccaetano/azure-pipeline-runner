@@ -5,6 +5,7 @@ import { TimelineRecord } from "../../types/stages";
 import { getBuildStages } from "../../utils/requests";
 import { StageItem } from "./stage-item";
 import { formatDuration } from "../../utils/format-duration";
+import { isStageWaitingForApproval } from "../../utils/approval-detection";
 
 const STAGE_CONTEXT_VALUE = "stage";
 
@@ -196,6 +197,12 @@ export class StageTreeDataProvider
         (child) => child.parentId === record.id
       );
 
+      // Check if this stage is waiting for approval
+      const waitingForApproval = isStageWaitingForApproval(
+        record.id,
+        allRecords
+      );
+
       if (record?.startTime && record?.finishTime) {
         const startTime = new Date(record.startTime);
         const finishTime = new Date(record.finishTime);
@@ -209,7 +216,8 @@ export class StageTreeDataProvider
           ? vscode.TreeItemCollapsibleState.Collapsed
           : vscode.TreeItemCollapsibleState.None,
         STAGE_CONTEXT_VALUE,
-        record
+        record,
+        waitingForApproval
       );
     });
   }
