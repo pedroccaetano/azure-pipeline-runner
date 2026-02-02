@@ -8,7 +8,7 @@ import { Pipeline, Project } from "../../types/types";
 import { BuildItem } from "./build-item";
 
 export class BuildTreeDataProvider
-  implements vscode.TreeDataProvider<BuildItem>
+  implements vscode.TreeDataProvider<BuildItem>, vscode.Disposable
 {
   private _onDidChangeTreeData: vscode.EventEmitter<
     BuildItem | undefined | void
@@ -20,6 +20,9 @@ export class BuildTreeDataProvider
   private allBuilds: Build[] = [];
   private currentPipeline?: Pipeline;
   private currentProject?: Project;
+  private pollingIntervalId: NodeJS.Timeout | undefined;
+  private readonly POLLING_INTERVAL = 5000; // 5 seconds
+  private pollingEnabled: boolean = true;
 
   constructor() {}
 
@@ -33,7 +36,79 @@ export class BuildTreeDataProvider
 
   refresh(): void {
     this.builds = [];
+    this.stopPolling();
     this._onDidChangeTreeData.fire();
+  }
+
+  private shouldPoll(): boolean {
+    return this.builds.some((buildItem) => {
+      const build = buildItem.builds?.[0];
+      if (!build) {
+        return false;
+      }
+      const status = build.status?.toLowerCase();
+      return (
+        status === "inprogress" ||
+        status === "notstarted" ||
+        status === "cancelling"
+      );
+    });
+  }
+
+  private startPolling(): void {
+    if (this.pollingIntervalId) {
+      return; // Already polling
+    }
+
+    this.pollingIntervalId = setInterval(() => {
+      this.refreshBuilds();
+    }, this.POLLING_INTERVAL);
+    this.updateContextState(true);
+  }
+
+  private stopPolling(): void {
+    if (this.pollingIntervalId) {
+      clearInterval(this.pollingIntervalId);
+      this.pollingIntervalId = undefined;
+      this.updateContextState(false);
+    }
+  }
+
+  private updatePollingState(): void {
+    if (this.pollingEnabled && this.shouldPoll() && !this.pollingIntervalId) {
+      this.startPolling();
+    } else if ((!this.pollingEnabled || !this.shouldPoll()) && this.pollingIntervalId) {
+      this.stopPolling();
+    } else if (!this.pollingEnabled || !this.shouldPoll()) {
+      // Ensure context is updated even if we weren't polling
+      this.updateContextState(false);
+    }
+  }
+
+  private updateContextState(active: boolean): void {
+    vscode.commands.executeCommand(
+      "setContext",
+      "azurePipelinesRunner.buildPollingActive",
+      active
+    );
+  }
+
+  public togglePolling(): void {
+    this.pollingEnabled = !this.pollingEnabled;
+    if (this.pollingEnabled) {
+      this.updatePollingState();
+    } else {
+      this.stopPolling();
+      this.updateContextState(false);
+    }
+  }
+
+  public isPollingEnabled(): boolean {
+    return this.pollingEnabled;
+  }
+
+  dispose(): void {
+    this.stopPolling();
   }
 
   getTreeItem(element: BuildItem): vscode.TreeItem {
@@ -48,6 +123,9 @@ export class BuildTreeDataProvider
   }
 
   async loadBuilds(pipeline: Pipeline, project: Project): Promise<void> {
+    // CRITICAL: Stop any existing polling from previous pipeline
+    this.stopPolling();
+
     await this.showProgress(
       `Loading builds for ${pipeline.name}`,
       async (progress) => {
@@ -73,6 +151,9 @@ export class BuildTreeDataProvider
           this.builds = this.createBuildItems(firstBuilds, project, pipeline);
           this._onDidChangeTreeData.fire();
           progress.report({ increment: 100 });
+
+          // Start polling if needed for the new pipeline
+          this.updatePollingState();
         } catch (error) {
           let errorMessage = "Unknown error";
           if (error instanceof Error) {
@@ -98,6 +179,8 @@ export class BuildTreeDataProvider
       { id: pipelineId, name: this.builds[0].pipeline?.name } as Pipeline,
       { name: projectName } as Project
     );
+
+    // Note: updatePollingState() is already called within loadBuilds()
   }
 
   async loadMoreBuilds(): Promise<void> {

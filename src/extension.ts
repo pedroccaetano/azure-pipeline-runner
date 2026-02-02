@@ -35,7 +35,26 @@ export async function activate(context: vscode.ExtensionContext) {
   });
 
   // Store tree views in context for later use
-  context.subscriptions.push(accountsTreeView, pipelinesTreeView, buildsTreeView, stagesTreeView);
+  context.subscriptions.push(
+    accountsTreeView,
+    pipelinesTreeView,
+    buildsTreeView,
+    stagesTreeView,
+    buildTreeDataProvider,
+    stageTreeDataProvider
+  );
+
+  // Initialize polling context states (both start as inactive/false)
+  vscode.commands.executeCommand(
+    "setContext",
+    "azurePipelinesRunner.buildPollingActive",
+    false
+  );
+  vscode.commands.executeCommand(
+    "setContext",
+    "azurePipelinesRunner.stagePollingActive",
+    false
+  );
 
   // Create output channel for pipeline logs
   const outputChannel = vscode.window.createOutputChannel("Azure Pipeline Logs");
