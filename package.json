@@ -120,6 +120,11 @@
         }
       },
       {
+        "command": "azurePipelinesRunner.retryStage",
+        "title": "Retry Stage",
+        "icon": "$(redo)"
+      },
+      {
         "command": "azurePipelinesRunner.loadMoreBuilds",
         "title": "Load More Builds",
         "icon": {
@@ -138,7 +143,7 @@
       {
         "command": "azurePipelinesRunner.retriggerBuild",
         "title": "Retrigger Build",
-        "icon": "$(debug-restart)"
+        "icon": "$(redo)"
       },
       {
         "command": "azurePipelinesRunner.addAccount",
@@ -245,9 +250,14 @@
           "group": "inline@2"
         },
         {
+          "command": "azurePipelinesRunner.retryStage",
+          "when": "viewItem == stage",
+          "group": "inline@1"
+        },
+        {
           "command": "azurePipelinesRunner.openStage",
           "when": "viewItem == stage",
-          "group": "inline"
+          "group": "inline@2"
         }
       ]
     },

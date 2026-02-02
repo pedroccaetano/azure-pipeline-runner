@@ -49,6 +49,10 @@ export class StageTreeDataProvider
     return this.build;
   }
 
+  getAllRecords(): TimelineRecord[] {
+    return this.allRecords;
+  }
+
   pausePolling(): void {
     if (this.pollingIntervalId) {
       clearInterval(this.pollingIntervalId);

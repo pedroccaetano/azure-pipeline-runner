@@ -337,6 +337,60 @@ export function registerCommands(
   );
 
   context.subscriptions.push(
+    vscode.commands.registerCommand(
+      "azurePipelinesRunner.retryStage",
+      async ({ timelineRecord }: { timelineRecord: TimelineRecord }) => {
+        try {
+          // Validate that this is a Stage
+          if (timelineRecord.type !== "Stage") {
+            vscode.window.showErrorMessage(
+              "Retry is only available for stages."
+            );
+            return;
+          }
+
+          // Validate that stage has an identifier
+          if (!timelineRecord.identifier) {
+            vscode.window.showErrorMessage(
+              "Stage identifier is not available. Cannot retry this stage."
+            );
+            return;
+          }
+
+          // Get all records for checkpoint detection
+          const allRecords = stageTreeDataProvider.getAllRecords();
+          
+          // Import the retry service
+          const { handleStageRetry } = await import("../services/stage-retry-service.js");
+          
+          // Handle the retry
+          await handleStageRetry(
+            timelineRecord.projectName,
+            timelineRecord.buildId,
+            timelineRecord.id,
+            timelineRecord.identifier,
+            timelineRecord.name,
+            allRecords
+          );
+          
+          // Refresh the stages tree after retry
+          setTimeout(() => {
+            stageTreeDataProvider.refreshStages();
+          }, 2000);
+        } catch (error) {
+          let errorMessage = "Unknown error";
+          if (error instanceof Error) {
+            errorMessage = error.message;
+          }
+          vscode.window.showErrorMessage(
+            `Failed to retry stage: ${errorMessage}`
+          );
+        }
+      }
+    )
+  );
+
+  context.subscriptions.push(
     vscode.commands.registerCommand("azurePipelinesRunner.showWelcome", () => {
       vscode.commands.executeCommand(
         "workbench.action.openSettings",

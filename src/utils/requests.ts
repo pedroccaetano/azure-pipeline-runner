@@ -335,3 +335,37 @@ export function parseYamlParameters(yamlContent: string): PipelineParameter[] {
   console.log("Total parameters found:", parameters.length);
   return parameters;
 }
+
+export async function getBuildDetails(
+  project: string,
+  buildId: number
+): Promise<Build> {
+  const { pat, organization } = await getConfiguration();
+  const url = `https://dev.azure.com/${organization}/${project}/_apis/build/builds/${buildId}?api-version=7.1`;
+  const response = await getAxiosInstance(pat).get<Build>(url);
+  return response.data;
+}
+
+export async function retryBuildFailedJobs(
+  project: string,
+  buildId: number
+): Promise<void> {
+  const { pat, organization } = await getConfiguration();
+  const url = `https://dev.azure.com/${organization}/${project}/_apis/build/builds/${buildId}?retry=true&api-version=7.1`;
+  await getAxiosInstance(pat).patch(url, {});
+}
+
+export async function retryStage(
+  project: string,
+  buildId: number,
+  stageIdentifier: string,
+  forceRetryAllJobs: boolean
+): Promise<void> {
+  const { pat, organization } = await getConfiguration();
+  const url = `https://dev.azure.com/${organization}/${project}/_apis/build/builds/${buildId}/stages/${stageIdentifier}?api-version=7.1`;
+  await getAxiosInstance(pat).patch(url, {
+    state: "retry",
+    forceRetryAllJobs: forceRetryAllJobs,
+  });
+}
+
