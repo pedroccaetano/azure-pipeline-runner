@@ -1,0 +1,52 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+trigger: none
+
+pool:
+  vmImage: ubuntu-latest
+
+stages:
+# Basic stage that provides retry options "Rerun just this stage" and "Rerun stage and its dependents"
+- stage: Stage1
+  displayName: 'Stage 1'
+  jobs:
+  - job: Job1
+    displayName: 'Job 1'
+    steps:
+    - script: echo Hello, world!
+      displayName: 'Run a one-line script'
+
+# Stage that requires an "Environment" to be created in ADO called "example-environment" (Use "None" when asked for resource during creation)
+#   After creating the environment, navigate to the "Approvals and checks" tab within the environment
+#   Click the "+" button and choose "Approvals".
+#   Type in your username and click "Create".
+# If stage is approved, it provides retry options "Rerun just this stage" and "Rerun stage and its dependents"
+# If stage is rejected, it provides retry option "Retry Stage"
+- stage: Stage2
+  displayName: 'Stage 2'
+  dependsOn: Stage1
+  jobs:
+  - deployment: DeployJob
+    displayName: 'Deploy Job'
+    environment: example-environment
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - script: echo Hello, world!
+            displayName: 'Run a one-line script'
+
+# Stage that fails and provides the "Rerun failed jobs" and "Rerun all jobs" options.
+# I added support only for the "Rerun failed jobs" for now.
+- stage: Stage3
+  displayName: 'Stage 3'
+  dependsOn: Stage2
+  jobs:
+  - job: Job3
+    displayName: 'Job 3'
+    steps:
+    - bash: exit 1
+      displayName: 'Force failure'
