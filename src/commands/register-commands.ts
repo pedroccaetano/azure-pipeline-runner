@@ -669,62 +669,6 @@ export function registerCommands(
 
   context.subscriptions.push(
     vscode.commands.registerCommand(
-      "azurePipelinesRunner.retainBuild",
-      async ({ builds, project }: { builds: Build[]; project: Project }) => {
-        try {
-          const build = builds[0];
-          if (!build) {
-            vscode.window.showErrorMessage("No build found to retain.");
-            return;
-          }
-
-          const isRetained = build.keepForever || false;
-          const action = isRetained ? "Unretain" : "Retain";
-
-          const confirmation = await vscode.window.showInformationMessage(
-            `${action} build #${build.buildNumber}?`,
-            { modal: true },
-            action,
-            "Cancel"
-          );
-
-          if (confirmation !== action) {
-            return;
-          }
-
-          const success = await vscode.window.withProgress(
-            {
-              location: vscode.ProgressLocation.Notification,
-              title: `${action}ing build #${build.buildNumber}...`,
-              cancellable: false,
-            },
-            async () => {
-              return await retainBuild(project.name, build.id, !isRetained);
-            }
-          );
-
-          if (success) {
-            vscode.window.showInformationMessage(
-              `Build #${build.buildNumber} successfully ${action.toLowerCase()}ed`
-            );
-            // Refresh builds list
-            await buildTreeDataProvider.refreshBuilds();
-          }
-        } catch (error) {
-          let errorMessage = "Unknown error";
-          if (error instanceof Error) {
-            errorMessage = error.message;
-          }
-          vscode.window.showErrorMessage(
-            `Failed to retain build: ${errorMessage}`
-          );
-        }
-      }
-    )
-  );
-
-  context.subscriptions.push(
-    vscode.commands.registerCommand(
       "azurePipelinesRunner.cancelBuild",
       async ({ builds, project }: { builds: Build[]; project: Project }) => {
         try {

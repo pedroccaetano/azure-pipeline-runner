@@ -37,6 +37,7 @@ type Build = {
   triggeredByBuild: unknown;
   appendCommitMessageToRunName: boolean;
   commitMessage?: string;
+  keepForever?: boolean;
 };
 
 type Links = {
