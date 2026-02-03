@@ -21,6 +21,9 @@ import {
   parseYamlParameters,
   getPipelineRun,
   getProjects,
+  deleteBuild,
+  retainBuild,
+  cancelBuild,
 } from "../utils/requests";
 import { collectParameterValues } from "../utils/parameter-prompt";
 
@@ -605,6 +608,175 @@ export function registerCommands(
           }
           vscode.window.showErrorMessage(
             `Failed to retrigger build: ${errorMessage}`
+          );
+        }
+      }
+    )
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      "azurePipelinesRunner.deleteBuild",
+      async ({ builds, project }: { builds: Build[]; project: Project }) => {
+        try {
+          const build = builds[0];
+          if (!build) {
+            vscode.window.showErrorMessage("No build found to delete.");
+            return;
+          }
+
+          const confirmation = await vscode.window.showWarningMessage(
+            `Are you sure you want to delete build #${build.buildNumber}?`,
+            { modal: true },
+            "Delete",
+            "Cancel"
+          );
+
+          if (confirmation !== "Delete") {
+            return;
+          }
+
+          const success = await vscode.window.withProgress(
+            {
+              location: vscode.ProgressLocation.Notification,
+              title: `Deleting build #${build.buildNumber}...`,
+              cancellable: false,
+            },
+            async () => {
+              return await deleteBuild(project.name, build.id);
+            }
+          );
+
+          if (success) {
+            vscode.window.showInformationMessage(
+              `Build #${build.buildNumber} successfully deleted`
+            );
+            // Refresh builds list
+            await buildTreeDataProvider.refreshBuilds();
+          }
+        } catch (error) {
+          let errorMessage = "Unknown error";
+          if (error instanceof Error) {
+            errorMessage = error.message;
+          }
+          vscode.window.showErrorMessage(
+            `Failed to delete build: ${errorMessage}`
+          );
+        }
+      }
+    )
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      "azurePipelinesRunner.retainBuild",
+      async ({ builds, project }: { builds: Build[]; project: Project }) => {
+        try {
+          const build = builds[0];
+          if (!build) {
+            vscode.window.showErrorMessage("No build found to retain.");
+            return;
+          }
+
+          const isRetained = build.keepForever || false;
+          const action = isRetained ? "Unretain" : "Retain";
+
+          const confirmation = await vscode.window.showInformationMessage(
+            `${action} build #${build.buildNumber}?`,
+            { modal: true },
+            action,
+            "Cancel"
+          );
+
+          if (confirmation !== action) {
+            return;
+          }
+
+          const success = await vscode.window.withProgress(
+            {
+              location: vscode.ProgressLocation.Notification,
+              title: `${action}ing build #${build.buildNumber}...`,
+              cancellable: false,
+            },
+            async () => {
+              return await retainBuild(project.name, build.id, !isRetained);
+            }
+          );
+
+          if (success) {
+            vscode.window.showInformationMessage(
+              `Build #${build.buildNumber} successfully ${action.toLowerCase()}ed`
+            );
+            // Refresh builds list
+            await buildTreeDataProvider.refreshBuilds();
+          }
+        } catch (error) {
+          let errorMessage = "Unknown error";
+          if (error instanceof Error) {
+            errorMessage = error.message;
+          }
+          vscode.window.showErrorMessage(
+            `Failed to retain build: ${errorMessage}`
+          );
+        }
+      }
+    )
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      "azurePipelinesRunner.cancelBuild",
+      async ({ builds, project }: { builds: Build[]; project: Project }) => {
+        try {
+          const build = builds[0];
+          if (!build) {
+            vscode.window.showErrorMessage("No build found to cancel.");
+            return;
+          }
+
+          if (build.status !== "inProgress" && build.status !== "notStarted") {
+            vscode.window.showWarningMessage(
+              `Build #${build.buildNumber} is not in progress and cannot be cancelled.`
+            );
+            return;
+          }
+
+          const confirmation = await vscode.window.showWarningMessage(
+            `Are you sure you want to cancel build #${build.buildNumber}?`,
+            { modal: true },
+            "Cancel Build",
+            "No"
+          );
+
+          if (confirmation !== "Cancel Build") {
+            return;
+          }
+
+          const success = await vscode.window.withProgress(
+            {
+              location: vscode.ProgressLocation.Notification,
+              title: `Cancelling build #${build.buildNumber}...`,
+              cancellable: false,
+            },
+            async () => {
+              return await cancelBuild(project.name, build.id);
+            }
+          );
+
+          if (success) {
+            vscode.window.showInformationMessage(
+              `Build #${build.buildNumber} is being cancelled`
+            );
+            // Refresh builds list
+            await buildTreeDataProvider.refreshBuilds();
+          }
+        } catch (error) {
+          let errorMessage = "Unknown error";
+          if (error instanceof Error) {
+            errorMessage = error.message;
+          }
+          vscode.window.showErrorMessage(
+            `Failed to cancel build: ${errorMessage}`
           );
         }
       }
