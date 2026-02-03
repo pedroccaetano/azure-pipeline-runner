@@ -188,6 +188,101 @@ export async function runPipeline(
   }
 }
 
+export async function deleteBuild(
+  project: string,
+  buildId: number
+): Promise<boolean> {
+  try {
+    const { pat, organization } = await getConfiguration();
+    const url = `https://dev.azure.com/${organization}/${project}/_apis/build/builds/${buildId}?api-version=7.1`;
+    await getAxiosInstance(pat).delete(url);
+    return true;
+  } catch (error: any) {
+    let errorMessage = "Unknown error";
+    if (error.response?.data?.message) {
+      errorMessage = error.response.data.message;
+    } else if (error.response?.data) {
+      errorMessage = JSON.stringify(error.response.data);
+    } else if (error instanceof Error) {
+      errorMessage = error.message;
+    }
+    vscode.window.showErrorMessage(
+      `Failed to delete build: ${errorMessage}`
+    );
+    return false;
+  }
+}
+
+export async function retainBuild(
+  project: string,
+  buildId: number,
+  retain: boolean
+): Promise<boolean> {
+  try {
+    const { pat, organization } = await getConfiguration();
+    
+    if (retain) {
+      // Create retention lease
+      const url = `https://dev.azure.com/${organization}/${project}/_apis/build/retention/leases?api-version=7.1`;
+      await getAxiosInstance(pat).post(url, {
+        runId: buildId,
+        protectPipeline: false,
+        daysValid: 3650, // ~10 years
+      });
+    } else {
+      // Get leases for this build and delete them
+      const listUrl = `https://dev.azure.com/${organization}/${project}/_apis/build/retention/leases?runId=${buildId}&api-version=7.1`;
+      const response = await getAxiosInstance(pat).get(listUrl);
+      const leases = response.data.value || [];
+      
+      for (const lease of leases) {
+        const deleteUrl = `https://dev.azure.com/${organization}/${project}/_apis/build/retention/leases/${lease.leaseId}?api-version=7.1`;
+        await getAxiosInstance(pat).delete(deleteUrl);
+      }
+    }
+    
+    return true;
+  } catch (error: any) {
+    let errorMessage = "Unknown error";
+    if (error.response?.data?.message) {
+      errorMessage = error.response.data.message;
+    } else if (error.response?.data) {
+      errorMessage = JSON.stringify(error.response.data);
+    } else if (error instanceof Error) {
+      errorMessage = error.message;
+    }
+    vscode.window.showErrorMessage(
+      `Failed to retain build: ${errorMessage}`
+    );
+    return false;
+  }
+}
+
+export async function cancelBuild(
+  project: string,
+  buildId: number
+): Promise<boolean> {
+  try {
+    const { pat, organization } = await getConfiguration();
+    const url = `https://dev.azure.com/${organization}/${project}/_apis/build/builds/${buildId}?api-version=7.1`;
+    await getAxiosInstance(pat).patch(url, { status: "Cancelling" });
+    return true;
+  } catch (error: any) {
+    let errorMessage = "Unknown error";
+    if (error.response?.data?.message) {
+      errorMessage = error.response.data.message;
+    } else if (error.response?.data) {
+      errorMessage = JSON.stringify(error.response.data);
+    } else if (error instanceof Error) {
+      errorMessage = error.message;
+    }
+    vscode.window.showErrorMessage(
+      `Failed to cancel build: ${errorMessage}`
+    );
+    return false;
+  }
+}
+
 export async function getPipelineRun(
   project: string,
   pipelineId: number,

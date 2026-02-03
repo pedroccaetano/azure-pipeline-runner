@@ -32,128 +32,30 @@ export class StageItem extends vscode.TreeItem {
     }
   }
 
-  private getIconPath(): { light: string; dark: string } {
-    // Check if waiting for approval first (highest priority)
-    if (this.isWaitingForApproval) {
-      return {
-        light: path.join(
-          __filename,
-          "..",
-          "..",
-          "..",
-          "..",
-          "resources",
-          "light",
-          "approval-waiting.svg"
-        ),
-        dark: path.join(
-          __filename,
-          "..",
-          "..",
-          "..",
-          "..",
-          "resources",
-          "dark",
-          "approval-waiting.svg"
-        ),
-      };
-    }
-
-    let iconName = "";
+  private getIconPath(): vscode.ThemeIcon {
     switch (this.timelineRecord.result) {
       case "succeeded":
-        iconName = "succeeded.svg";
-        break;
+        return new vscode.ThemeIcon("pass", new vscode.ThemeColor("testing.iconPassed"));
       case "failed":
       case "abandoned":
-        iconName = "failed.svg";
-        break;
+        return new vscode.ThemeIcon("error", new vscode.ThemeColor("testing.iconFailed"));
       case "canceled":
-        iconName = "canceled.svg";
-        break;
+        return new vscode.ThemeIcon("circle-slash", new vscode.ThemeColor("testing.iconSkipped"));
       case "succeededWithIssues":
-        iconName = "succeededWithIssues.svg";
-        break;
+        return new vscode.ThemeIcon("warning", new vscode.ThemeColor("testing.iconQueued"));
       case "skipped":
-        iconName = "skipped.svg";
-        return {
-          light: path.join(
-            __filename,
-            "..",
-            "..",
-            "..",
-            "..",
-            "resources",
-            "light",
-            iconName
-          ),
-          dark: path.join(
-            __filename,
-            "..",
-            "..",
-            "..",
-            "..",
-            "resources",
-            "dark",
-            iconName
-          ),
-        };
+        return new vscode.ThemeIcon("debug-step-over");
       default:
         if (this.timelineRecord.state === "inProgress") {
-          iconName = "inProgress.svg";
-          break;
+          return new vscode.ThemeIcon("loading~spin");
         }
 
         if (this.timelineRecord.state === "pending" || this.timelineRecord.state === "notStarted") {
-          iconName = "pending.svg";
-          return {
-            light: path.join(
-              __filename,
-              "..",
-              "..",
-              "..",
-              "..",
-              "resources",
-              "light",
-              iconName
-            ),
-            dark: path.join(
-              __filename,
-              "..",
-              "..",
-              "..",
-              "..",
-              "resources",
-              "dark",
-              iconName
-            ),
-          };
+          return new vscode.ThemeIcon("clock", new vscode.ThemeColor("testing.iconQueued"));
         }
 
-        iconName = "";
-        break;
+        return new vscode.ThemeIcon("circle-outline");
     }
-
-    return {
-      light: path.join(
-        __filename,
-        "..",
-        "..",
-        "..",
-        "..",
-        "resources",
-        iconName
-      ),
-      dark: path.join(
-        __filename,
-        "..",
-        "..",
-        "..",
-        "..",
-        "resources",
-        iconName
-      ),
-    };
   }
 
   private getTooltip(): string {

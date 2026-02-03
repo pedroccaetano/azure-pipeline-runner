@@ -22,30 +22,9 @@ export class PipelineItem extends vscode.TreeItem {
     }
   }
 
-  private getIconPath(): { light: string; dark: string } {
+  private getIconPath(): vscode.ThemeIcon | { light: string; dark: string } {
     if (this.contextValue === "folder") {
-      return {
-        light: path.join(
-          __filename,
-          "..",
-          "..",
-          "..",
-          "..",
-          "resources",
-          "light",
-          "folder.svg"
-        ),
-        dark: path.join(
-          __filename,
-          "..",
-          "..",
-          "..",
-          "..",
-          "resources",
-          "dark",
-          "folder.svg"
-        ),
-      };
+      return new vscode.ThemeIcon("folder");
     } else if (this.contextValue === "pipeline") {
       return {
         light: path.join(

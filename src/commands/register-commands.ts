@@ -20,6 +20,10 @@ import {
   getPipelineYaml,
   parseYamlParameters,
   getPipelineRun,
+  getProjects,
+  deleteBuild,
+  retainBuild,
+  cancelBuild,
 } from "../utils/requests";
 import { collectParameterValues } from "../utils/parameter-prompt";
 
@@ -222,6 +226,92 @@ export function registerCommands(
       buildTreeDataProvider.refresh();
       stageTreeDataProvider.refresh();
     })
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      "azurePipelinesRunner.filterPipelines",
+      async () => {
+        try {
+          // Get all projects
+          const projects = (await getProjects()) || [];
+          
+          // Edge case: No projects available
+          if (projects.length === 0) {
+            vscode.window.showInformationMessage("No projects available to filter.");
+            return;
+          }
+
+          // Get current filter
+          const currentFilter = pipelineTreeDataProvider.getFilteredProjects();
+          
+          // Create quick pick items with current selection
+          const quickPickItems = projects
+            .sort((a, b) => a.name.localeCompare(b.name))
+            .map((project) => ({
+              label: project.name,
+              picked: currentFilter.size === 0 || currentFilter.has(project.name),
+              project,
+            }));
+
+          // Show quick pick with multi-select
+          const selectedItems = await vscode.window.showQuickPick(quickPickItems, {
+            canPickMany: true,
+            placeHolder: "Select projects to show (all selected by default)",
+            title: "Filter Pipelines by Project",
+          });
+
+          // Edge case: User cancelled
+          if (selectedItems === undefined) {
+            return;
+          }
+
+          // Edge case: No projects selected - show a warning
+          if (selectedItems.length === 0) {
+            const confirm = await vscode.window.showWarningMessage(
+              "No projects selected. This will hide all pipelines. Continue?",
+              { modal: true },
+              "Yes",
+              "No"
+            );
+
+            if (confirm !== "Yes") {
+              return;
+            }
+          }
+
+          // Update filter
+          if (selectedItems.length === projects.length) {
+            // All projects selected - clear filter to show all
+            pipelineTreeDataProvider.clearFilter();
+            vscode.window.showInformationMessage("Filter cleared - showing all projects.");
+          } else {
+            // Apply filter
+            const selectedProjectNames = selectedItems.map((item) => item.label);
+            pipelineTreeDataProvider.setFilteredProjects(selectedProjectNames);
+            
+            const projectsText = selectedProjectNames.length === 1
+              ? "1 project"
+              : `${selectedProjectNames.length} projects`;
+            vscode.window.showInformationMessage(`Filter applied - showing ${projectsText}.`);
+          }
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "Unknown error";
+          vscode.window.showErrorMessage(`Failed to filter pipelines: ${message}`);
+        }
+      }
+    )
+  );
+
+  // Register the same command for the active (filled) icon state
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      "azurePipelinesRunner.filterPipelinesActive",
+      async () => {
+        // Delegate to the same logic
+        await vscode.commands.executeCommand("azurePipelinesRunner.filterPipelines");
+      }
+    )
   );
 
   context.subscriptions.push(
@@ -715,6 +805,119 @@ export function registerCommands(
           }
           vscode.window.showErrorMessage(
             `Failed to retrigger build: ${errorMessage}`
+          );
+        }
+      }
+    )
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      "azurePipelinesRunner.deleteBuild",
+      async ({ builds, project }: { builds: Build[]; project: Project }) => {
+        try {
+          const build = builds[0];
+          if (!build) {
+            vscode.window.showErrorMessage("No build found to delete.");
+            return;
+          }
+
+          const confirmation = await vscode.window.showWarningMessage(
+            `Are you sure you want to delete build #${build.buildNumber}?`,
+            { modal: true },
+            "Delete",
+            "Cancel"
+          );
+
+          if (confirmation !== "Delete") {
+            return;
+          }
+
+          const success = await vscode.window.withProgress(
+            {
+              location: vscode.ProgressLocation.Notification,
+              title: `Deleting build #${build.buildNumber}...`,
+              cancellable: false,
+            },
+            async () => {
+              return await deleteBuild(project.name, build.id);
+            }
+          );
+
+          if (success) {
+            vscode.window.showInformationMessage(
+              `Build #${build.buildNumber} successfully deleted`
+            );
+            // Refresh builds list
+            await buildTreeDataProvider.refreshBuilds();
+          }
+        } catch (error) {
+          let errorMessage = "Unknown error";
+          if (error instanceof Error) {
+            errorMessage = error.message;
+          }
+          vscode.window.showErrorMessage(
+            `Failed to delete build: ${errorMessage}`
+          );
+        }
+      }
+    )
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      "azurePipelinesRunner.cancelBuild",
+      async ({ builds, project }: { builds: Build[]; project: Project }) => {
+        try {
+          const build = builds[0];
+          if (!build) {
+            vscode.window.showErrorMessage("No build found to cancel.");
+            return;
+          }
+
+          if (build.status !== "inProgress" && build.status !== "notStarted") {
+            vscode.window.showWarningMessage(
+              `Build #${build.buildNumber} is not in progress and cannot be cancelled.`
+            );
+            return;
+          }
+
+          const confirmation = await vscode.window.showWarningMessage(
+            `Are you sure you want to cancel build #${build.buildNumber}?`,
+            { modal: true },
+            "Cancel Build",
+            "No"
+          );
+
+          if (confirmation !== "Cancel Build") {
+            return;
+          }
+
+          const success = await vscode.window.withProgress(
+            {
+              location: vscode.ProgressLocation.Notification,
+              title: `Cancelling build #${build.buildNumber}...`,
+              cancellable: false,
+            },
+            async () => {
+              return await cancelBuild(project.name, build.id);
+            }
+          );
+
+          if (success) {
+            vscode.window.showInformationMessage(
+              `Build #${build.buildNumber} is being cancelled`
+            );
+            // Refresh builds list
+            await buildTreeDataProvider.refreshBuilds();
+          }
+        } catch (error) {
+          let errorMessage = "Unknown error";
+          if (error instanceof Error) {
+            errorMessage = error.message;
+          }
+          vscode.window.showErrorMessage(
+            `Failed to cancel build: ${errorMessage}`
           );
         }
       }
