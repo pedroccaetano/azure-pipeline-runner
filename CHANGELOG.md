@@ -2,6 +2,15 @@
 
 All notable changes to the "Azure Pipelines Runner" extension will be documented in this file.
 
+## [0.1.0]
+
+- **Filter Pipelines by Project** feature for better project management
+  - Filter view to show only selected projects
+  - Persistent filter across sessions
+- Improved icons using native VSCode theme icons
+- Added **Delete Build** functionality to remove builds directly from the extension
+- Added **Cancel Build** functionality to stop in-progress or queued builds
+
 ## [0.0.9]
 
 - Auto-refresh polling with configurable settings and status bar control [#22](https://github.com/pedroccaetano/azure-pipeline-runner/pull/22) by @JtMotoX
