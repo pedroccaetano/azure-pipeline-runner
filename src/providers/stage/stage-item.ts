@@ -33,6 +33,11 @@ export class StageItem extends vscode.TreeItem {
   }
 
   private getIconPath(): vscode.ThemeIcon {
+    // Check for approval waiting state first (highest priority)
+    if (this.isWaitingForApproval) {
+      return new vscode.ThemeIcon("workspace-unknown", new vscode.ThemeColor("testing.iconQueued"));
+    }
+
     switch (this.timelineRecord.result) {
       case "succeeded":
         return new vscode.ThemeIcon("pass", new vscode.ThemeColor("testing.iconPassed"));
@@ -44,14 +49,14 @@ export class StageItem extends vscode.TreeItem {
       case "succeededWithIssues":
         return new vscode.ThemeIcon("warning", new vscode.ThemeColor("testing.iconQueued"));
       case "skipped":
-        return new vscode.ThemeIcon("debug-step-over");
+        return new vscode.ThemeIcon("skip", new vscode.ThemeColor("icon.foreground"));
       default:
         if (this.timelineRecord.state === "inProgress") {
           return new vscode.ThemeIcon("loading~spin");
         }
 
         if (this.timelineRecord.state === "pending" || this.timelineRecord.state === "notStarted") {
-          return new vscode.ThemeIcon("clock", new vscode.ThemeColor("testing.iconQueued"));
+          return new vscode.ThemeIcon("clockface", new vscode.ThemeColor("charts.blue"));
         }
 
         return new vscode.ThemeIcon("circle-outline");
