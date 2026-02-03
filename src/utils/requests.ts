@@ -359,13 +359,15 @@ export async function retryStage(
   project: string,
   buildId: number,
   stageIdentifier: string,
-  forceRetryAllJobs: boolean
+  forceRetryAllJobs: boolean,
+  retryDependencies: boolean
 ): Promise<void> {
   const { pat, organization } = await getConfiguration();
   const url = `https://dev.azure.com/${organization}/${project}/_apis/build/builds/${buildId}/stages/${stageIdentifier}?api-version=7.1`;
   await getAxiosInstance(pat).patch(url, {
-    state: "retry",
+    state: 1,
     forceRetryAllJobs: forceRetryAllJobs,
+    retryDependencies: retryDependencies,
   });
 }
 

@@ -86,12 +86,12 @@ export async function handleStageRetry(
           {
             label: "$(play) Rerun just this stage",
             description: "Only retry failed jobs in this stage",
-            value: false,
+            retryDependencies: false,
           },
           {
             label: "$(run-all) Rerun stage and its dependents",
             description: "Retry all jobs and trigger dependent stages",
-            value: true,
+            retryDependencies: true,
           },
         ];
         
@@ -107,12 +107,14 @@ export async function handleStageRetry(
           projectName,
           buildId,
           stageIdentifier,
-          selected.value
+          false,
+          selected.retryDependencies
         );
         
-        vscode.window.showInformationMessage(
-          `Rerunning stage '${stageName}'`
-        );
+        const message = selected.retryDependencies
+          ? `Rerunning stage '${stageName}' and dependents`
+          : `Rerunning stage '${stageName}'`;
+        vscode.window.showInformationMessage(message);
         break;
       }
       
@@ -122,7 +124,8 @@ export async function handleStageRetry(
           projectName,
           buildId,
           stageIdentifier,
-          false
+          false,
+          true
         );
         
         vscode.window.showInformationMessage(
