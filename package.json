@@ -74,66 +74,42 @@
       {
         "command": "azurePipelinesRunner.refreshEntry",
         "title": "Refresh",
-        "icon": {
-          "light": "resources/light/refresh.svg",
-          "dark": "resources/dark/refresh.svg"
-        }
+        "icon": "$(refresh)"
       },
       {
         "command": "azurePipelinesRunner.refreshBuilds",
         "title": "Refresh",
-        "icon": {
-          "light": "resources/light/refresh.svg",
-          "dark": "resources/dark/refresh.svg"
-        }
+        "icon": "$(refresh)"
       },
       {
         "command": "azurePipelinesRunner.refreshStages",
         "title": "Refresh",
-        "icon": {
-          "light": "resources/light/refresh.svg",
-          "dark": "resources/dark/refresh.svg"
-        }
+        "icon": "$(refresh)"
       },
       {
         "command": "azurePipelinesRunner.openPipeline",
         "title": "Open Pipeline",
-        "icon": {
-          "light": "resources/light/browser.svg",
-          "dark": "resources/dark/browser.svg"
-        }
+        "icon": "$(link-external)"
       },
       {
         "command": "azurePipelinesRunner.openBuild",
         "title": "Open Build",
-        "icon": {
-          "light": "resources/light/browser.svg",
-          "dark": "resources/dark/browser.svg"
-        }
+        "icon": "$(link-external)"
       },
       {
         "command": "azurePipelinesRunner.openStage",
         "title": "Open Stage",
-        "icon": {
-          "light": "resources/light/browser.svg",
-          "dark": "resources/dark/browser.svg"
-        }
+        "icon": "$(link-external)"
       },
       {
         "command": "azurePipelinesRunner.loadMoreBuilds",
         "title": "Load More Builds",
-        "icon": {
-          "light": "resources/light/plus.svg",
-          "dark": "resources/dark/plus.svg"
-        }
+        "icon": "$(add)"
       },
       {
         "command": "azurePipelinesRunner.runPipelineFromBranch",
         "title": "Run Pipeline from Branch",
-        "icon": {
-          "light": "resources/light/play.svg",
-          "dark": "resources/dark/play.svg"
-        }
+        "icon": "$(play)"
       },
       {
         "command": "azurePipelinesRunner.retriggerBuild",
@@ -167,11 +143,21 @@
       {
         "command": "azurePipelinesRunner.toggleLogViewer",
         "title": "Log Viewer Settings",
-        "icon": "$(ellipsis)"
+        "icon": "$(gear)"
       },
       {
         "command": "azurePipelinesRunner.togglePolling",
         "title": "Toggle Azure Pipelines Polling"
+      },
+      {
+        "command": "azurePipelinesRunner.filterPipelines",
+        "title": "Filter Pipelines by Project",
+        "icon": "$(filter)"
+      },
+      {
+        "command": "azurePipelinesRunner.filterPipelinesActive",
+        "title": "Filter Pipelines by Project",
+        "icon": "$(filter-filled)"
       }
     ],
     "menus": {
@@ -187,9 +173,19 @@
           "group": "navigation@2"
         },
         {
+          "command": "azurePipelinesRunner.filterPipelines",
+          "when": "view == azurePipelineView && !azurePipelinesRunner.pipelinesFiltered",
+          "group": "navigation@1"
+        },
+        {
+          "command": "azurePipelinesRunner.filterPipelinesActive",
+          "when": "view == azurePipelineView && azurePipelinesRunner.pipelinesFiltered",
+          "group": "navigation@1"
+        },
+        {
           "command": "azurePipelinesRunner.refreshEntry",
           "when": "view == azurePipelineView",
-          "group": "navigation"
+          "group": "navigation@2"
         },
         {
           "command": "azurePipelinesRunner.refreshBuilds",

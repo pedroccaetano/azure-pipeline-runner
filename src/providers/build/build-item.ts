@@ -26,90 +26,40 @@ export class BuildItem extends vscode.TreeItem {
     }
   }
 
-  private getIconPath(): { light: string; dark: string } {
+  private getIconPath(): vscode.ThemeIcon {
     if (
       this.contextValue === "build" &&
       this.builds &&
       this.builds.length > 0
     ) {
       const build = this.builds[0];
-      let iconName = "";
       
       // Check result first (for completed builds)
       if (build.result) {
         switch (build.result) {
           case "succeeded":
-            iconName = "succeeded.svg";
-            break;
+            return new vscode.ThemeIcon("pass", new vscode.ThemeColor("testing.iconPassed"));
           case "failed":
-            iconName = "failed.svg";
-            break;
+            return new vscode.ThemeIcon("error", new vscode.ThemeColor("testing.iconFailed"));
           case "canceled":
-            iconName = "canceled.svg";
-            break;
+            return new vscode.ThemeIcon("circle-slash", new vscode.ThemeColor("testing.iconSkipped"));
           case "partiallySucceeded":
-            iconName = "partiallySucceeded.svg";
-            break;
+            return new vscode.ThemeIcon("warning", new vscode.ThemeColor("testing.iconQueued"));
         }
       }
       
       // If no result yet, check status (for in-progress/queued builds)
-      if (!iconName) {
-        switch (build.status) {
-          case "inProgress":
-            iconName = "inProgress.svg";
-            break;
-          case "notStarted":
-          case "postponed":
-          case "none":
-            iconName = "clock.svg";
-            break;
-          default:
-            iconName = "clock.svg";
-            break;
-        }
+      switch (build.status) {
+        case "inProgress":
+          return new vscode.ThemeIcon("loading~spin");
+        case "notStarted":
+        case "postponed":
+        case "none":
+        default:
+          return new vscode.ThemeIcon("clock", new vscode.ThemeColor("testing.iconQueued"));
       }
-      return {
-        light: path.join(
-          __filename,
-          "..",
-          "..",
-          "..",
-          "..",
-          "resources",
-          iconName
-        ),
-        dark: path.join(
-          __filename,
-          "..",
-          "..",
-          "..",
-          "..",
-          "resources",
-          iconName
-        ),
-      };
     } else {
-      return {
-        light: path.join(
-          __filename,
-          "..",
-          "..",
-          "..",
-          "..",
-          "resources",
-          "repo.svg"
-        ),
-        dark: path.join(
-          __filename,
-          "..",
-          "..",
-          "..",
-          "..",
-          "resources",
-          "repo.svg"
-        ),
-      };
+      return new vscode.ThemeIcon("repo");
     }
   }
 

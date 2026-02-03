@@ -13,12 +13,74 @@ export class PipelineTreeDataProvider
     this._onDidChangeTreeData.event;
 
   private pipelines: Pipeline[] = [];
+  private filteredProjects: Set<string> = new Set();
+  private totalProjects: number = 0;
+  private context?: vscode.ExtensionContext;
+  private treeView?: vscode.TreeView<PipelineItem>;
 
   constructor() {}
+
+  setContext(context: vscode.ExtensionContext, treeView: vscode.TreeView<PipelineItem>): void {
+    this.context = context;
+    this.treeView = treeView;
+    
+    // Restore filtered projects from storage
+    const savedFilter = context.globalState.get<string[]>('filteredProjects');
+    if (savedFilter && savedFilter.length > 0) {
+      this.filteredProjects = new Set(savedFilter);
+      this.updateFilterContext();
+    }
+  }
 
   refresh(): void {
     this.pipelines = [];
     this._onDidChangeTreeData.fire();
+  }
+
+  setFilteredProjects(projects: string[]): void {
+    this.filteredProjects = new Set(projects);
+    
+    // Persist to storage
+    if (this.context) {
+      this.context.globalState.update('filteredProjects', projects);
+    }
+    
+    this.updateFilterContext();
+    this.refresh();
+  }
+
+  getFilteredProjects(): Set<string> {
+    return this.filteredProjects;
+  }
+
+  clearFilter(): void {
+    this.filteredProjects.clear();
+    
+    // Clear from storage
+    if (this.context) {
+      this.context.globalState.update('filteredProjects', undefined);
+    }
+    
+    this.updateFilterContext();
+    this.refresh();
+  }
+
+  private updateFilterContext(): void {
+    const isFiltered = this.filteredProjects.size > 0;
+    vscode.commands.executeCommand(
+      'setContext',
+      'azurePipelinesRunner.pipelinesFiltered',
+      isFiltered
+    );
+    
+    // Update tree view title
+    if (this.treeView && this.totalProjects > 0) {
+      if (isFiltered) {
+        this.treeView.title = `Pipelines (${this.filteredProjects.size}/${this.totalProjects} filtered)`;
+      } else {
+        this.treeView.title = 'Pipelines';
+      }
+    }
   }
 
   getTreeItem(element: PipelineItem): vscode.TreeItem {
@@ -29,9 +91,20 @@ export class PipelineTreeDataProvider
     if (!element) {
       // Top-level: Projects
       const projects = (await getProjects()) || [];
-      return projects
-        .sort((a, b) => a.name.localeCompare(b.name))
-        .map(
+      const sortedProjects = projects.sort((a, b) => a.name.localeCompare(b.name));
+      
+      // Update total projects count
+      this.totalProjects = sortedProjects.length;
+      
+      // Apply filter if any projects are filtered
+      const filteredList = this.filteredProjects.size > 0
+        ? sortedProjects.filter(project => this.filteredProjects.has(project.name))
+        : sortedProjects;
+      
+      // Update title after getting projects
+      this.updateFilterContext();
+      
+      return filteredList.map(
           (project) =>
             new PipelineItem(
               project.name,

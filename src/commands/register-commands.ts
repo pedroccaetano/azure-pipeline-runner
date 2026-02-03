@@ -20,6 +20,7 @@ import {
   getPipelineYaml,
   parseYamlParameters,
   getPipelineRun,
+  getProjects,
 } from "../utils/requests";
 import { collectParameterValues } from "../utils/parameter-prompt";
 
@@ -222,6 +223,92 @@ export function registerCommands(
       buildTreeDataProvider.refresh();
       stageTreeDataProvider.refresh();
     })
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      "azurePipelinesRunner.filterPipelines",
+      async () => {
+        try {
+          // Get all projects
+          const projects = (await getProjects()) || [];
+          
+          // Edge case: No projects available
+          if (projects.length === 0) {
+            vscode.window.showInformationMessage("No projects available to filter.");
+            return;
+          }
+
+          // Get current filter
+          const currentFilter = pipelineTreeDataProvider.getFilteredProjects();
+          
+          // Create quick pick items with current selection
+          const quickPickItems = projects
+            .sort((a, b) => a.name.localeCompare(b.name))
+            .map((project) => ({
+              label: project.name,
+              picked: currentFilter.size === 0 || currentFilter.has(project.name),
+              project,
+            }));
+
+          // Show quick pick with multi-select
+          const selectedItems = await vscode.window.showQuickPick(quickPickItems, {
+            canPickMany: true,
+            placeHolder: "Select projects to show (all selected by default)",
+            title: "Filter Pipelines by Project",
+          });
+
+          // Edge case: User cancelled
+          if (selectedItems === undefined) {
+            return;
+          }
+
+          // Edge case: No projects selected - show a warning
+          if (selectedItems.length === 0) {
+            const confirm = await vscode.window.showWarningMessage(
+              "No projects selected. This will hide all pipelines. Continue?",
+              { modal: true },
+              "Yes",
+              "No"
+            );
+
+            if (confirm !== "Yes") {
+              return;
+            }
+          }
+
+          // Update filter
+          if (selectedItems.length === projects.length) {
+            // All projects selected - clear filter to show all
+            pipelineTreeDataProvider.clearFilter();
+            vscode.window.showInformationMessage("Filter cleared - showing all projects.");
+          } else {
+            // Apply filter
+            const selectedProjectNames = selectedItems.map((item) => item.label);
+            pipelineTreeDataProvider.setFilteredProjects(selectedProjectNames);
+            
+            const projectsText = selectedProjectNames.length === 1
+              ? "1 project"
+              : `${selectedProjectNames.length} projects`;
+            vscode.window.showInformationMessage(`Filter applied - showing ${projectsText}.`);
+          }
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "Unknown error";
+          vscode.window.showErrorMessage(`Failed to filter pipelines: ${message}`);
+        }
+      }
+    )
+  );
+
+  // Register the same command for the active (filled) icon state
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      "azurePipelinesRunner.filterPipelinesActive",
+      async () => {
+        // Delegate to the same logic
+        await vscode.commands.executeCommand("azurePipelinesRunner.filterPipelines");
+      }
+    )
   );
 
   context.subscriptions.push(

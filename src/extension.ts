@@ -34,6 +34,9 @@ export async function activate(context: vscode.ExtensionContext) {
     treeDataProvider: stageTreeDataProvider,
   });
 
+  // Initialize pipeline tree data provider context
+  pipelineTreeDataProvider.setContext(context, pipelinesTreeView);
+
   // Store tree views in context for later use
   context.subscriptions.push(
     accountsTreeView,
