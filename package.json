@@ -137,9 +137,14 @@
         "icon": "$(stop-circle)"
       },
       {
-        "command": "azurePipelinesRunner.retainBuild",
-        "title": "Build Retention",
+        "command": "azurePipelinesRunner.retainBuildIndefinitely",
+        "title": "Retain Indefinitely",
         "icon": "$(lock)"
+      },
+      {
+        "command": "azurePipelinesRunner.removeRetention",
+        "title": "Remove Retention",
+        "icon": "$(unlock)"
       },
       {
         "command": "azurePipelinesRunner.addAccount",
@@ -275,8 +280,13 @@
           "group": "2_actions@1"
         },
         {
-          "command": "azurePipelinesRunner.retainBuild",
-          "when": "viewItem == build || viewItem == build-pinned",
+          "command": "azurePipelinesRunner.retainBuildIndefinitely",
+          "when": "viewItem == build",
+          "group": "2_actions@2"
+        },
+        {
+          "command": "azurePipelinesRunner.removeRetention",
+          "when": "viewItem == build-pinned",
           "group": "2_actions@2"
         },
         {

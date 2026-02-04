@@ -926,7 +926,7 @@ export function registerCommands(
 
   context.subscriptions.push(
     vscode.commands.registerCommand(
-      "azurePipelinesRunner.retainBuild",
+      "azurePipelinesRunner.retainBuildIndefinitely",
       async ({ builds, project }: { builds: Build[]; project: Project }) => {
         try {
           const build = builds[0];
@@ -935,41 +935,21 @@ export function registerCommands(
             return;
           }
 
-          const action = await vscode.window.showQuickPick(
-            [
-              { label: "Retain indefinitely", value: true },
-              { label: "Remove retention", value: false },
-            ],
-            {
-              placeHolder: "Choose retention action",
-            }
-          );
-
-          if (!action) {
-            return;
-          }
-
           const success = await vscode.window.withProgress(
             {
               location: vscode.ProgressLocation.Notification,
-              title: action.value
-                ? `Retaining build #${build.buildNumber}...`
-                : `Removing retention from build #${build.buildNumber}...`,
+              title: `Retaining build #${build.buildNumber}...`,
               cancellable: false,
             },
             async () => {
-              return await retainBuild(project.name, build.id, build.definition.id, action.value);
+              return await retainBuild(project.name, build.id, build.definition.id, true);
             }
           );
 
           if (success) {
             vscode.window.showInformationMessage(
-              action.value
-                ? `Build #${build.buildNumber} will be retained indefinitely`
-                : `Retention removed from build #${build.buildNumber}`
+              `Build #${build.buildNumber} will be retained indefinitely`
             );
-            // Wait a moment for Azure DevOps to process the retention lease change
-            await new Promise(resolve => setTimeout(resolve, 1000));
             // Refresh builds list to update retention lease status
             await buildTreeDataProvider.refreshBuilds(true);
           }
@@ -979,7 +959,49 @@ export function registerCommands(
             errorMessage = error.message;
           }
           vscode.window.showErrorMessage(
-            `Failed to update build retention: ${errorMessage}`
+            `Failed to retain build: ${errorMessage}`
+          );
+        }
+      }
+    )
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      "azurePipelinesRunner.removeRetention",
+      async ({ builds, project }: { builds: Build[]; project: Project }) => {
+        try {
+          const build = builds[0];
+          if (!build) {
+            vscode.window.showErrorMessage("No build found.");
+            return;
+          }
+
+          const success = await vscode.window.withProgress(
+            {
+              location: vscode.ProgressLocation.Notification,
+              title: `Removing retention from build #${build.buildNumber}...`,
+              cancellable: false,
+            },
+            async () => {
+              return await retainBuild(project.name, build.id, build.definition.id, false);
+            }
+          );
+
+          if (success) {
+            vscode.window.showInformationMessage(
+              `Retention removed from build #${build.buildNumber}`
+            );
+            // Refresh builds list to update retention lease status
+            await buildTreeDataProvider.refreshBuilds(true);
+          }
+        } catch (error) {
+          let errorMessage = "Unknown error";
+          if (error instanceof Error) {
+            errorMessage = error.message;
+          }
+          vscode.window.showErrorMessage(
+            `Failed to remove retention: ${errorMessage}`
           );
         }
       }
