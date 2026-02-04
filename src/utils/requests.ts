@@ -83,14 +83,17 @@ export async function getBuildsByDefinitionId(
 
 export async function getCommitMessage(
   project: string,
-  repositoryId: string,
-  commitId: string
+  buildId: number
 ): Promise<string> {
   try {
     const { pat, organization } = await getConfiguration();
-    const url = `https://dev.azure.com/${organization}/${project}/_apis/git/repositories/${repositoryId}/commits/${commitId}?api-version=7.1`;
+    const url = `https://dev.azure.com/${organization}/${project}/_apis/build/builds/${buildId}/changes?api-version=7.1`;
     const response = await getAxiosInstance(pat).get(url);
-    return response.data.comment;
+    // Return the first change's message (most recent commit)
+    if (response.data.value && response.data.value.length > 0) {
+      return response.data.value[0].message;
+    }
+    return "";
   } catch (error) {
     vscode.window.showErrorMessage(
       "Error getting commit message. Please check if your PAT has the correct permissions."

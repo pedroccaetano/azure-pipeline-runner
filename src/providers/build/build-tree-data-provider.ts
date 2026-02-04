@@ -275,8 +275,7 @@ export class BuildTreeDataProvider
       if (build.appendCommitMessageToRunName) {
         const commitMessage = await getCommitMessage(
           projectName,
-          build.repository.id,
-          build.sourceVersion
+          build.id
         );
         build.commitMessage = commitMessage;
       }
