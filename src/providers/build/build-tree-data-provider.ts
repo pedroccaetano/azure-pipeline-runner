@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import {
   getBuildsByDefinitionId,
   getCommitMessage,
+  getRetentionLeases,
 } from "../../utils/requests";
 import { Build } from "../../types/builds";
 import { Pipeline, Project } from "../../types/types";
@@ -23,6 +24,7 @@ export class BuildTreeDataProvider
   private pollingIntervalId: NodeJS.Timeout | undefined;
   private configChangeListener: vscode.Disposable | undefined;
   private isViewVisible: boolean = true;
+  private isManualRefresh: boolean = false;
 
   constructor() {
     // Listen for configuration changes
@@ -98,7 +100,7 @@ export class BuildTreeDataProvider
     const intervalMs = intervalSeconds * 1000;
 
     this.pollingIntervalId = setInterval(() => {
-      this.refreshBuilds();
+      this.refreshBuilds(false);
     }, intervalMs);
     this.updateContextState(true);
   }
@@ -149,6 +151,7 @@ export class BuildTreeDataProvider
   async loadBuilds(pipeline: Pipeline, project: Project): Promise<void> {
     // CRITICAL: Stop any existing polling from previous pipeline
     this.stopPolling();
+    this.isManualRefresh = true;
 
     await this.showProgress(
       `Loading builds for ${pipeline.name}`,
@@ -164,6 +167,7 @@ export class BuildTreeDataProvider
 
           if (builds.length === 0) {
             vscode.window.showWarningMessage("No builds found!");
+            this.isManualRefresh = false;
             return;
           }
 
@@ -172,13 +176,21 @@ export class BuildTreeDataProvider
 
           await this.appendCommitMessages(firstBuilds, project.name);
 
+          // Fetch retention leases for manual refresh
+          if (this.isManualRefresh) {
+            await this.fetchRetentionLeases(firstBuilds, project.name);
+          }
+
           this.builds = this.createBuildItems(firstBuilds, project, pipeline);
           this._onDidChangeTreeData.fire();
           progress.report({ increment: 100 });
 
+          this.isManualRefresh = false;
+
           // Start polling if needed for the new pipeline
           this.updatePollingState();
         } catch (error) {
+          this.isManualRefresh = false;
           let errorMessage = "Unknown error";
           if (error instanceof Error) {
             errorMessage = error.message;
@@ -191,7 +203,7 @@ export class BuildTreeDataProvider
     );
   }
 
-  async refreshBuilds(): Promise<void> {
+  async refreshBuilds(isManual: boolean = false): Promise<void> {
     // Check if polling is enabled
     const config = vscode.workspace.getConfiguration("azurePipelinesRunner");
     const pollingEnabled = config.get<boolean>("enablePolling", true);
@@ -203,6 +215,9 @@ export class BuildTreeDataProvider
     if (this.builds.length === 0) {
       return;
     }
+
+    // Set the manual refresh flag
+    this.isManualRefresh = isManual;
 
     const projectName = this.builds[0].project?.name as string;
     const pipelineId = this.builds[0].pipeline?.id as number;
@@ -227,6 +242,9 @@ export class BuildTreeDataProvider
           const projectName = this.builds[0].project?.name;
 
           await this.appendCommitMessages(nextBuilds, projectName as string);
+
+          // Fetch retention leases for newly loaded builds
+          await this.fetchRetentionLeases(nextBuilds, projectName as string);
 
           const buildItems = this.createBuildItems(
             nextBuilds,
@@ -265,22 +283,39 @@ export class BuildTreeDataProvider
     }
   }
 
+  private async fetchRetentionLeases(
+    builds: Build[],
+    projectName: string
+  ): Promise<void> {
+    for (const build of builds) {
+      try {
+        const leases = await getRetentionLeases(projectName, build.id);
+        build.retentionLeases = leases;
+      } catch (error) {
+        // Silently ignore errors, just don't set retention leases
+        build.retentionLeases = [];
+      }
+    }
+  }
+
   private createBuildItems(
     builds: Build[],
     project: Project,
     pipeline: Pipeline
   ): BuildItem[] {
-    return builds.map(
-      (build) =>
-        new BuildItem(
-          `#${build.buildNumber} • ${build.commitMessage?.split("\n")[0]}`,
-          vscode.TreeItemCollapsibleState.None,
-          "build",
-          [build],
-          project,
-          pipeline
-        )
-    );
+    return builds.map((build) => {
+      const label = `#${build.buildNumber} • ${build.commitMessage?.split("\n")[0]}`;
+      const isPinned = build.retentionLeases && build.retentionLeases.length > 0;
+      
+      return new BuildItem(
+        label,
+        vscode.TreeItemCollapsibleState.None,
+        isPinned ? "build-pinned" : "build",
+        [build],
+        project,
+        pipeline
+      );
+    });
   }
 
   private async showProgress(

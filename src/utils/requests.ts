@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import * as yaml from "js-yaml";
-import { Build, PipelineById } from "../types/builds";
+import { Build, PipelineById, RetentionLease } from "../types/builds";
 import {
   PipelinesResponse,
   Pipeline,
@@ -96,6 +96,21 @@ export async function getCommitMessage(
       "Error getting commit message. Please check if your PAT has the correct permissions."
     );
     return "";
+  }
+}
+
+export async function getRetentionLeases(
+  project: string,
+  buildId: number
+): Promise<RetentionLease[]> {
+  try {
+    const { pat, organization } = await getConfiguration();
+    const url = `https://dev.azure.com/${organization}/${project}/_apis/build/builds/${buildId}/leases?api-version=7.1`;
+    const response = await getAxiosInstance(pat).get<{ value: RetentionLease[] }>(url);
+    return response.data.value || [];
+  } catch (error) {
+    // Silently ignore errors for retention leases - it's not critical
+    return [];
   }
 }
 

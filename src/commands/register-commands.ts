@@ -674,7 +674,7 @@ export function registerCommands(
     vscode.commands.registerCommand(
       "azurePipelinesRunner.refreshBuilds",
       async () => {
-        await buildTreeDataProvider.refreshBuilds();
+        await buildTreeDataProvider.refreshBuilds(true);
         stageTreeDataProvider.refresh();
       }
     )
@@ -796,7 +796,7 @@ export function registerCommands(
               `Build successfully retriggered on branch: ${branch}`
             );
             // Refresh builds list
-            await buildTreeDataProvider.refreshBuilds();
+            await buildTreeDataProvider.refreshBuilds(true);
           }
         } catch (error) {
           let errorMessage = "Unknown error";
@@ -849,7 +849,7 @@ export function registerCommands(
               `Build #${build.buildNumber} successfully deleted`
             );
             // Refresh builds list
-            await buildTreeDataProvider.refreshBuilds();
+            await buildTreeDataProvider.refreshBuilds(true);
           }
         } catch (error) {
           let errorMessage = "Unknown error";
@@ -909,7 +909,7 @@ export function registerCommands(
               `Build #${build.buildNumber} is being cancelled`
             );
             // Refresh builds list
-            await buildTreeDataProvider.refreshBuilds();
+            await buildTreeDataProvider.refreshBuilds(true);
           }
         } catch (error) {
           let errorMessage = "Unknown error";
@@ -968,8 +968,10 @@ export function registerCommands(
                 ? `Build #${build.buildNumber} will be retained indefinitely`
                 : `Retention removed from build #${build.buildNumber}`
             );
-            // Refresh builds list
-            await buildTreeDataProvider.refreshBuilds();
+            // Wait a moment for Azure DevOps to process the retention lease change
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            // Refresh builds list to update retention lease status
+            await buildTreeDataProvider.refreshBuilds(true);
           }
         } catch (error) {
           let errorMessage = "Unknown error";
@@ -978,6 +980,41 @@ export function registerCommands(
           }
           vscode.window.showErrorMessage(
             `Failed to update build retention: ${errorMessage}`
+          );
+        }
+      }
+    )
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      "azurePipelinesRunner.viewPinnedBuild",
+      async ({ builds, project }: { builds: Build[]; project: Project }) => {
+        try {
+          const build = builds[0];
+          if (!build) {
+            vscode.window.showErrorMessage("No build found.");
+            return;
+          }
+
+          if (!build.retentionLeases || build.retentionLeases.length === 0) {
+            vscode.window.showInformationMessage(
+              `Build #${build.buildNumber} is not pinned.`
+            );
+            return;
+          }
+
+          const leaseCount = build.retentionLeases.length;
+          const message = `Build #${build.buildNumber} is pinned with ${leaseCount} retention ${leaseCount === 1 ? 'lease' : 'leases'}. This build is protected from deletion.`;
+          
+          vscode.window.showInformationMessage(message);
+        } catch (error) {
+          let errorMessage = "Unknown error";
+          if (error instanceof Error) {
+            errorMessage = error.message;
+          }
+          vscode.window.showErrorMessage(
+            `Failed to view pinned build: ${errorMessage}`
           );
         }
       }
@@ -1166,7 +1203,7 @@ export function registerCommands(
             const retryDelay = 1000; // 1 second
             
             for (let i = 0; i < maxRetries; i++) {
-              await buildTreeDataProvider.refreshBuilds();
+              await buildTreeDataProvider.refreshBuilds(true);
               
               // Check if the new build appears in the list by importing and checking
               const { getBuildsByDefinitionId } = await import(
