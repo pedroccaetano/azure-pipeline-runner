@@ -216,27 +216,37 @@ export async function deleteBuild(
 export async function retainBuild(
   project: string,
   buildId: number,
+  definitionId: number,
   retain: boolean
 ): Promise<boolean> {
   try {
     const { pat, organization } = await getConfiguration();
     
     if (retain) {
+      // Get current user's connection data to retrieve user ID
+      const connectionDataUrl = `https://dev.azure.com/${organization}/_apis/connectionData?api-version=6.0-preview`;
+      const connectionDataResponse = await getAxiosInstance(pat).get(connectionDataUrl);
+      const userId = connectionDataResponse.data.authenticatedUser.id;
+      
       // Create retention lease
-      const url = `https://dev.azure.com/${organization}/${project}/_apis/build/retention/leases?api-version=7.1`;
-      await getAxiosInstance(pat).post(url, {
+      const url = `https://dev.azure.com/${organization}/${project}/_apis/build/retention/leases?api-version=6.0-preview.2`;
+      await getAxiosInstance(pat).post(url, [{
+        definitionId: definitionId,
         runId: buildId,
+        ownerId: `User:${userId}`,
         protectPipeline: false,
-        daysValid: 3650, // ~10 years
-      });
+        daysValid: 365000, // ~1000 years
+      }]);
     } else {
       // Get leases for this build and delete them
-      const listUrl = `https://dev.azure.com/${organization}/${project}/_apis/build/retention/leases?runId=${buildId}&api-version=7.1`;
+      const listUrl = `https://dev.azure.com/${organization}/${project}/_apis/build/retention/leases?definitionId=${definitionId}&runId=${buildId}&api-version=6.0-preview.2`;
       const response = await getAxiosInstance(pat).get(listUrl);
       const leases = response.data.value || [];
       
-      for (const lease of leases) {
-        const deleteUrl = `https://dev.azure.com/${organization}/${project}/_apis/build/retention/leases/${lease.leaseId}?api-version=7.1`;
+      if (leases.length > 0) {
+        // Delete all leases using the ids query parameter
+        const leaseIds = leases.map((lease: any) => lease.leaseId).join(',');
+        const deleteUrl = `https://dev.azure.com/${organization}/${project}/_apis/build/retention/leases?ids=${leaseIds}&api-version=6.0-preview.2`;
         await getAxiosInstance(pat).delete(deleteUrl);
       }
     }

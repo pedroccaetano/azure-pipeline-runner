@@ -926,6 +926,66 @@ export function registerCommands(
 
   context.subscriptions.push(
     vscode.commands.registerCommand(
+      "azurePipelinesRunner.retainBuild",
+      async ({ builds, project }: { builds: Build[]; project: Project }) => {
+        try {
+          const build = builds[0];
+          if (!build) {
+            vscode.window.showErrorMessage("No build found to retain.");
+            return;
+          }
+
+          const action = await vscode.window.showQuickPick(
+            [
+              { label: "Retain indefinitely", value: true },
+              { label: "Remove retention", value: false },
+            ],
+            {
+              placeHolder: "Choose retention action",
+            }
+          );
+
+          if (!action) {
+            return;
+          }
+
+          const success = await vscode.window.withProgress(
+            {
+              location: vscode.ProgressLocation.Notification,
+              title: action.value
+                ? `Retaining build #${build.buildNumber}...`
+                : `Removing retention from build #${build.buildNumber}...`,
+              cancellable: false,
+            },
+            async () => {
+              return await retainBuild(project.name, build.id, build.definition.id, action.value);
+            }
+          );
+
+          if (success) {
+            vscode.window.showInformationMessage(
+              action.value
+                ? `Build #${build.buildNumber} will be retained indefinitely`
+                : `Retention removed from build #${build.buildNumber}`
+            );
+            // Refresh builds list
+            await buildTreeDataProvider.refreshBuilds();
+          }
+        } catch (error) {
+          let errorMessage = "Unknown error";
+          if (error instanceof Error) {
+            errorMessage = error.message;
+          }
+          vscode.window.showErrorMessage(
+            `Failed to update build retention: ${errorMessage}`
+          );
+        }
+      }
+    )
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
       "azurePipelinesRunner.runPipelineFromBranch",
       async () => {
         try {

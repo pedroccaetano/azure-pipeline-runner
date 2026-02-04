@@ -132,6 +132,11 @@
         "icon": "$(stop-circle)"
       },
       {
+        "command": "azurePipelinesRunner.retainBuild",
+        "title": "Retain Build",
+        "icon": "$(lock)"
+      },
+      {
         "command": "azurePipelinesRunner.addAccount",
         "title": "Add Account",
         "icon": "$(add)"
