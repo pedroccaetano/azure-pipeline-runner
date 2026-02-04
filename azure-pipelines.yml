@@ -45,8 +45,13 @@ stages:
   displayName: 'Stage 3'
   dependsOn: Stage2
   jobs:
-  - job: Job3
-    displayName: 'Job 3'
+  - job: Job1
+    displayName: 'Job 1'
+    steps:
+    - script: echo Hello, world!
+      displayName: 'Run a one-line script'
+  - job: Job2
+    displayName: 'Job 2'
     steps:
     - bash: exit 1
       displayName: 'Force failure'
