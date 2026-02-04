@@ -1005,7 +1005,7 @@ export function registerCommands(
           }
 
           const leaseCount = build.retentionLeases.length;
-          const message = `Build #${build.buildNumber} is pinned with ${leaseCount} retention ${leaseCount === 1 ? 'lease' : 'leases'}. This build is protected from deletion.`;
+          const message = `Build #${build.buildNumber} is pinned with ${leaseCount} retention ${leaseCount === 1 ? 'lease' : 'leases'}. This build is protected from deletion. Right-click the build number to remove the retention lease.`;
           
           vscode.window.showInformationMessage(message);
         } catch (error) {
