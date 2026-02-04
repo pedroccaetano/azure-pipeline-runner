@@ -8,7 +8,8 @@ export class PipelineItem extends vscode.TreeItem {
     public readonly collapsibleState: vscode.TreeItemCollapsibleState,
     public readonly contextValue: string,
     public readonly pipeline?: Pipeline,
-    public readonly project?: Project
+    public readonly project?: Project,
+    public readonly folderPath?: string
   ) {
     super(label, collapsibleState);
     this.iconPath = this.getIconPath();
