@@ -25,6 +25,7 @@ export class BuildTreeDataProvider
   private configChangeListener: vscode.Disposable | undefined;
   private isViewVisible: boolean = true;
   private isManualRefresh: boolean = false;
+  private isLoading: boolean = false;
 
   constructor() {
     // Listen for configuration changes
@@ -143,6 +144,18 @@ export class BuildTreeDataProvider
 
   async getChildren(element?: BuildItem): Promise<BuildItem[]> {
     if (!element) {
+      if (this.isLoading) {
+        return [
+          new BuildItem(
+            "Loading builds...",
+            vscode.TreeItemCollapsibleState.None,
+            "loading",
+            undefined,
+            undefined,
+            undefined
+          ),
+        ];
+      }
       return this.builds;
     }
     return [];
@@ -152,6 +165,11 @@ export class BuildTreeDataProvider
     // CRITICAL: Stop any existing polling from previous pipeline
     this.stopPolling();
     this.isManualRefresh = true;
+
+    // Show loading indicator in tree view
+    this.isLoading = true;
+    this.builds = [];
+    this._onDidChangeTreeData.fire();
 
     await this.showProgress(
       `Loading builds for ${pipeline.name}`,
@@ -166,6 +184,8 @@ export class BuildTreeDataProvider
           );
 
           if (builds.length === 0) {
+            this.isLoading = false;
+            this._onDidChangeTreeData.fire();
             vscode.window.showWarningMessage("No builds found!");
             this.isManualRefresh = false;
             return;
@@ -182,6 +202,7 @@ export class BuildTreeDataProvider
           }
 
           this.builds = this.createBuildItems(firstBuilds, project, pipeline);
+          this.isLoading = false;
           this._onDidChangeTreeData.fire();
           progress.report({ increment: 100 });
 
@@ -190,6 +211,7 @@ export class BuildTreeDataProvider
           // Start polling if needed for the new pipeline
           this.updatePollingState();
         } catch (error) {
+          this.isLoading = false;
           this.isManualRefresh = false;
           let errorMessage = "Unknown error";
           if (error instanceof Error) {

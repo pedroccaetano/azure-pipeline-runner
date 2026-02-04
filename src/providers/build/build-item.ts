@@ -27,6 +27,11 @@ export class BuildItem extends vscode.TreeItem {
   }
 
   private getIconPath(): vscode.ThemeIcon {
+    // Loading state
+    if (this.contextValue === "loading") {
+      return new vscode.ThemeIcon("loading~spin");
+    }
+
     if (
       (this.contextValue === "build" || this.contextValue === "build-pinned") &&
       this.builds &&
