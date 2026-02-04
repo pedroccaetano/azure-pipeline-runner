@@ -265,6 +265,11 @@
           "group": "inline@2"
         },
         {
+          "command": "azurePipelinesRunner.openBuild",
+          "when": "viewItem == build || viewItem == build-pinned",
+          "group": "inline@3"
+        },
+        {
           "command": "azurePipelinesRunner.viewPinnedBuild",
           "when": "viewItem == build-pinned",
           "group": "inline@1"
