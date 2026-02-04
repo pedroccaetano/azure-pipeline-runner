@@ -138,17 +138,34 @@ export class StageTreeDataProvider
     if (!element) {
       return this.records;
     } else if (element.contextValue === STAGE_CONTEXT_VALUE) {
-      const children = this.allRecords
+      // Get direct children (excluding Jobs since they're hidden)
+      const directChildren = this.allRecords
         .filter((record) => record.name !== "Checkpoint")
-        .filter((record) => record.parentId === element.timelineRecord.id)
-        .sort((a, b) => {
+        .filter((record) => record.type !== "Job")
+        .filter((record) => record.parentId === element.timelineRecord.id);
+
+      // If this is a Phase, also get Tasks from the hidden Job child
+      const children = element.timelineRecord.type === "Phase"
+        ? this.allRecords
+            .filter((record) => {
+              // Find the Job child of this Phase
+              const jobChild = this.allRecords.find(
+                (r) => r.type === "Job" && r.parentId === element.timelineRecord.id
+              );
+              // Include Tasks that are children of that Job
+              return jobChild && record.parentId === jobChild.id && record.name !== "Checkpoint";
+            })
+        : directChildren;
+
+      return this.createStageItems(
+        (children.length > 0 ? children : directChildren).sort((a, b) => {
           if (a.order && b.order) {
             return a.order - b.order;
           }
           return 0;
-        });
-
-      return this.createStageItems(children, this.allRecords);
+        }),
+        this.allRecords
+      );
     }
 
     return [];
