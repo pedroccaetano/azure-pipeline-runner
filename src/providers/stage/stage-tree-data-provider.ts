@@ -8,6 +8,9 @@ import { formatDuration } from "../../utils/format-duration";
 import { isStageWaitingForApproval } from "../../utils/approval-detection";
 
 const STAGE_CONTEXT_VALUE = "stage";
+const STAGE_STOPPED_CONTEXT_VALUE = "stage-stopped";
+const PHASE_CONTEXT_VALUE = "phase";
+const TASK_CONTEXT_VALUE = "task";
 
 export class StageTreeDataProvider
   implements vscode.TreeDataProvider<StageItem>, vscode.Disposable
@@ -239,12 +242,24 @@ export class StageTreeDataProvider
         record.name += " • " + formatDuration(totalTime);
       }
 
+      // Determine the appropriate context value based on the record type and state
+      let contextValue = STAGE_CONTEXT_VALUE;
+      if (record.type === "Phase") {
+        contextValue = PHASE_CONTEXT_VALUE;
+      } else if (record.type === "Task") {
+        contextValue = TASK_CONTEXT_VALUE;
+      } else if (record.type === "Stage") {
+        // Check if the stage is stopped (not in progress or pending)
+        const isRunning = record.state === "inProgress" || record.state === "pending" || record.state === "notStarted";
+        contextValue = isRunning ? STAGE_CONTEXT_VALUE : STAGE_STOPPED_CONTEXT_VALUE;
+      }
+
       return new StageItem(
         record.name,
         hasChildren
           ? vscode.TreeItemCollapsibleState.Collapsed
           : vscode.TreeItemCollapsibleState.None,
-        STAGE_CONTEXT_VALUE,
+        contextValue,
         record,
         waitingForApproval
       );

@@ -17,7 +17,9 @@ export class BuildItem extends vscode.TreeItem {
     this.iconPath = this.getIconPath();
     this.tooltip = this.getTooltip();
 
-    if ((contextValue === "build" || contextValue === "build-pinned") && builds && builds.length > 0) {
+    const isBuildItem = contextValue === "build" || contextValue === "build-pinned" || 
+                        contextValue === "build-running" || contextValue === "build-running-pinned";
+    if (isBuildItem && builds && builds.length > 0) {
       this.command = {
         command: "azurePipelinesRunner.loadStages",
         title: "Load Stages",
@@ -32,11 +34,9 @@ export class BuildItem extends vscode.TreeItem {
       return new vscode.ThemeIcon("loading~spin");
     }
 
-    if (
-      (this.contextValue === "build" || this.contextValue === "build-pinned") &&
-      this.builds &&
-      this.builds.length > 0
-    ) {
+    const isBuildItem = this.contextValue === "build" || this.contextValue === "build-pinned" ||
+                        this.contextValue === "build-running" || this.contextValue === "build-running-pinned";
+    if (isBuildItem && this.builds && this.builds.length > 0) {
       const build = this.builds[0];
       
       // Check result first (for completed builds)
@@ -69,11 +69,9 @@ export class BuildItem extends vscode.TreeItem {
   }
 
   private getTooltip(): vscode.MarkdownString | string {
-    if (
-      (this.contextValue === "build" || this.contextValue === "build-pinned") &&
-      this.builds &&
-      this.builds.length > 0
-    ) {
+    const isBuildItem = this.contextValue === "build" || this.contextValue === "build-pinned" ||
+                        this.contextValue === "build-running" || this.contextValue === "build-running-pinned";
+    if (isBuildItem && this.builds && this.builds.length > 0) {
       const build = this.builds[0];
       const markdown = new vscode.MarkdownString();
       markdown.supportHtml = true;

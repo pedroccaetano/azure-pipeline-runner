@@ -393,11 +393,20 @@ export class BuildTreeDataProvider
     return builds.map((build) => {
       const label = `#${build.buildNumber} • ${build.commitMessage?.split("\n")[0]}`;
       const isPinned = build.retentionLeases && build.retentionLeases.length > 0;
+      const status = build.status?.toLowerCase();
+      const isRunning = status === "inprogress" || status === "notstarted" || status === "cancelling";
+      
+      let contextValue: string;
+      if (isRunning) {
+        contextValue = isPinned ? "build-running-pinned" : "build-running";
+      } else {
+        contextValue = isPinned ? "build-pinned" : "build";
+      }
       
       return new BuildItem(
         label,
         vscode.TreeItemCollapsibleState.None,
-        isPinned ? "build-pinned" : "build",
+        contextValue,
         [build],
         project,
         pipeline
