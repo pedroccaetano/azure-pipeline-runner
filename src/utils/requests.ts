@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import * as yaml from "js-yaml";
+import axios from "axios";
 import { Build, PipelineById, RetentionLease } from "../types/builds";
 import {
   PipelinesResponse,
@@ -144,11 +145,94 @@ export async function getStageLog(
   return response.data;
 }
 
-export async function getRemoteBranches(
+export async function getPipelineConfiguration(
   project: string,
-  repositoryId: string
+  pipelineId: number
+): Promise<{ repositoryType: string; repositoryFullName: string } | null> {
+  try {
+    const { pat, organization } = await getConfiguration();
+    const url = `https://dev.azure.com/${organization}/${project}/_apis/pipelines/${pipelineId}?api-version=7.1`;
+    const response = await getAxiosInstance(pat).get(url);
+    
+    return {
+      repositoryType: response.data.configuration.repository.type,
+      repositoryFullName: response.data.configuration.repository.fullName || response.data.configuration.repository.name
+    };
+  } catch (error) {
+    console.error("Error fetching pipeline configuration:", error);
+    return null;
+  }
+}
+
+export async function getGitHubBranches(
+  repositoryFullName: string
 ): Promise<string[]> {
   try {
+    // repositoryFullName format: "owner/repo"
+    const url = `https://api.github.com/repos/${repositoryFullName}/branches`;
+    const response = await axios.get(url);
+    const branches = response.data.map((branch: any) => branch.name);
+    return branches;
+  } catch (error) {
+    vscode.window.showErrorMessage(
+      "Error fetching GitHub branches. The repository may be private or doesn't exist."
+    );
+    return [];
+  }
+}
+
+export async function getGitHubFileContent(
+  repositoryFullName: string,
+  filePath: string,
+  branch: string
+): Promise<string | null> {
+  try {
+    // repositoryFullName format: "owner/repo"
+    // GitHub API: GET /repos/{owner}/{repo}/contents/{path}
+    const cleanPath = filePath.startsWith("/") ? filePath.substring(1) : filePath;
+    const url = `https://api.github.com/repos/${repositoryFullName}/contents/${encodeURIComponent(cleanPath)}?ref=${encodeURIComponent(branch)}`;
+    
+    console.log("Fetching GitHub file from URL:", url);
+    
+    const response = await axios.get(url);
+    
+    // GitHub returns base64 encoded content
+    if (response.data && response.data.content) {
+      const content = Buffer.from(response.data.content, 'base64').toString('utf-8');
+      console.log("GitHub file fetched successfully, length:", content.length);
+      return content;
+    }
+    
+    console.log("Unexpected GitHub response format:", response.data);
+    return null;
+  } catch (error: any) {
+    console.error("Error fetching GitHub file:", error);
+    if (error.response?.status === 404) {
+      vscode.window.showErrorMessage(
+        `File not found in GitHub repository: ${filePath}`
+      );
+    } else {
+      vscode.window.showErrorMessage(
+        "Error fetching file from GitHub. The repository may be private or doesn't exist."
+      );
+    }
+    return null;
+  }
+}
+
+export async function getRemoteBranches(
+  project: string,
+  repositoryId: string,
+  repositoryType?: string,
+  repositoryFullName?: string
+): Promise<string[]> {
+  try {
+    // If GitHub repository type
+    if (repositoryType === "gitHub" && repositoryFullName) {
+      return await getGitHubBranches(repositoryFullName);
+    }
+    
+    // Default to Azure Repos API
     const { pat, organization } = await getConfiguration();
     const url = `https://dev.azure.com/${organization}/${project}/_apis/git/repositories/${repositoryId}/refs?filter=heads/&api-version=7.1`;
     const response = await getAxiosInstance(pat).get(url);
@@ -348,9 +432,17 @@ export async function getPipelineYaml(
   project: string,
   repositoryId: string,
   yamlPath: string,
-  branch: string = "main"
+  branch: string = "main",
+  repositoryType?: string,
+  repositoryFullName?: string
 ): Promise<string | null> {
   try {
+    // If GitHub repository type, use GitHub API
+    if (repositoryType === "gitHub" && repositoryFullName) {
+      return await getGitHubFileContent(repositoryFullName, yamlPath, branch);
+    }
+    
+    // Default to Azure Repos API
     const { pat, organization } = await getConfiguration();
     // Remove leading slash if present
     const cleanPath = yamlPath.startsWith("/") ? yamlPath.substring(1) : yamlPath;

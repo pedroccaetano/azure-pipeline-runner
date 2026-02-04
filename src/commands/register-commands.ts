@@ -15,6 +15,7 @@ import {
   getConfiguration,
   getStageLog,
   getRemoteBranches,
+  getPipelineConfiguration,
   runPipeline,
   getPipelineDefinition,
   getPipelineYaml,
@@ -1085,6 +1086,12 @@ export function registerCommands(
 
           const repositoryId = builds[0].repository.id;
 
+          // Get pipeline configuration to determine repository type
+          const pipelineConfig = await getPipelineConfiguration(
+            currentProject.name,
+            currentPipeline.id
+          );
+
           // Fetch remote branches
           const branches = await vscode.window.withProgress(
             {
@@ -1095,7 +1102,9 @@ export function registerCommands(
             async () => {
               return await getRemoteBranches(
                 currentProject.name,
-                repositoryId
+                repositoryId,
+                pipelineConfig?.repositoryType,
+                pipelineConfig?.repositoryFullName
               );
             }
           );
@@ -1147,7 +1156,9 @@ export function registerCommands(
                 currentProject.name,
                 repoId,
                 yamlPath,
-                selectedBranch
+                selectedBranch,
+                pipelineConfig?.repositoryType,
+                pipelineConfig?.repositoryFullName
               );
 
               if (yamlContent) {
