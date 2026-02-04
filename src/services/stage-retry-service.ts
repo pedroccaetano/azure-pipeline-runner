@@ -32,15 +32,8 @@ async function determineRetryMethod(
     };
   }
   
-  // Check if stage has failed checkpoint
-  const hasFailedCheckpoint = allRecords.some(
-    record => 
-      record.type === "Checkpoint" && 
-      record.parentId === stageId && 
-      record.result === "failed"
-  );
-  
-  if (hasFailedCheckpoint) {
+  // For failed stages, use stage-level retry
+  if (stage.result === "failed" || stage.result === "canceled") {
     return {
       method: "stage-level-retry",
       stageIdentifier,
@@ -49,7 +42,7 @@ async function determineRetryMethod(
     };
   }
   
-  // Default to build-level retry for failed stages without checkpoints
+  // Default to build-level retry for other cases
   return {
     method: "build-level-retry",
     buildId,
@@ -85,12 +78,10 @@ export async function handleStageRetry(
         const options = [
           {
             label: "$(play) Rerun just this stage",
-            description: "Only retry failed jobs in this stage",
             retryDependencies: false,
           },
           {
             label: "$(run-all) Rerun stage and its dependents",
-            description: "Retry all jobs and trigger dependent stages",
             retryDependencies: true,
           },
         ];
@@ -119,18 +110,40 @@ export async function handleStageRetry(
       }
       
       case "stage-level-retry": {
-        // Failed checkpoint - retry stage
+        // Failed checkpoint - prompt user for retry options
+        const options = [
+          {
+            label: "$(debug-restart) Rerun failed jobs",
+            description: "Only retry jobs in this stage that failed",
+            forceRetryAllJobs: false,
+          },
+          {
+            label: "$(run-all) Rerun all jobs",
+            description: "Retry all jobs in the stage",
+            forceRetryAllJobs: true,
+          },
+        ];
+        
+        const selected = await vscode.window.showQuickPick(options, {
+          placeHolder: "Choose how to retry this stage",
+        });
+        
+        if (!selected) {
+          return; // User cancelled
+        }
+        
         await retryStage(
           projectName,
           buildId,
           stageIdentifier,
-          false,
+          selected.forceRetryAllJobs,
           true
         );
         
-        vscode.window.showInformationMessage(
-          `Retrying stage '${stageName}'`
-        );
+        const message = selected.forceRetryAllJobs
+          ? `Rerunning all jobs in stage '${stageName}'`
+          : `Retrying failed jobs in stage '${stageName}'`;
+        vscode.window.showInformationMessage(message);
         break;
       }
       
