@@ -140,7 +140,11 @@ export class StageTreeDataProvider
   async getChildren(element?: StageItem): Promise<StageItem[]> {
     if (!element) {
       return this.records;
-    } else if (element.contextValue === STAGE_CONTEXT_VALUE) {
+    } else if (
+      element.contextValue === STAGE_CONTEXT_VALUE ||
+      element.contextValue === STAGE_STOPPED_CONTEXT_VALUE ||
+      element.contextValue === PHASE_CONTEXT_VALUE
+    ) {
       // Get direct children (excluding Jobs since they're hidden)
       const directChildren = this.allRecords
         .filter((record) => record.name !== "Checkpoint")
