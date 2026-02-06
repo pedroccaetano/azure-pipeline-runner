@@ -2,12 +2,23 @@
 
 All notable changes to the "Azure Pipelines Runner" extension will be documented in this file.
 
+## [0.2.0]
+
+- Major feature enhancements [#23](https://github.com/pedroccaetano/azure-pipeline-runner/pull/23) by @JtMotoX
+  - **Stage Approvals**: Approve or reject stages awaiting approval with interactive prompts
+  - **Stage Retry**: Retry failed stages with options to rerun failed or all jobs
+  - **Build Retention**: Retain builds indefinitely or remove retention with clear status indicators
+  - **Builds Pagination**: Configurable build loading per page for better performance
+  - **GitHub Repository Support**: Full support for Azure Pipelines stored in GitHub repositories
+  - UI improvements: loading states, updated icons, and better visual clarity
+  - Fixed nested folder support in pipeline tree (unlimited depth)
+
 ## [0.1.0]
 
 - **Filter Pipelines by Project** feature for better project management
   - Filter view to show only selected projects
   - Persistent filter across sessions
-- Improved icons using native VSCode theme icons
+  - Improved icons using native VSCode theme icons
 - Added **Delete Build** functionality to remove builds directly from the extension
 - Added **Cancel Build** functionality to stop in-progress or queued builds
 
