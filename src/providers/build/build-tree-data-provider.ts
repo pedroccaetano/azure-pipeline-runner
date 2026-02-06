@@ -359,30 +359,30 @@ export class BuildTreeDataProvider
     builds: Build[],
     projectName: string
   ): Promise<void> {
-    for (const build of builds) {
-      if (build.appendCommitMessageToRunName) {
-        const commitMessage = await getCommitMessage(
-          projectName,
-          build.id
-        );
+    const buildsNeedingCommit = builds.filter(b => b.appendCommitMessageToRunName);
+    await Promise.all(
+      buildsNeedingCommit.map(async (build) => {
+        const commitMessage = await getCommitMessage(projectName, build.id);
         build.commitMessage = commitMessage;
-      }
-    }
+      })
+    );
   }
 
   private async fetchRetentionLeases(
     builds: Build[],
     projectName: string
   ): Promise<void> {
-    for (const build of builds) {
-      try {
-        const leases = await getRetentionLeases(projectName, build.id);
-        build.retentionLeases = leases;
-      } catch (error) {
-        // Silently ignore errors, just don't set retention leases
-        build.retentionLeases = [];
-      }
-    }
+    await Promise.all(
+      builds.map(async (build) => {
+        try {
+          const leases = await getRetentionLeases(projectName, build.id);
+          build.retentionLeases = leases;
+        } catch (error) {
+          // Silently ignore errors, just don't set retention leases
+          build.retentionLeases = [];
+        }
+      })
+    );
   }
 
   private createBuildItems(
