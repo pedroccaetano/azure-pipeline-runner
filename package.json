@@ -102,6 +102,11 @@
         "icon": "$(link-external)"
       },
       {
+        "command": "azurePipelinesRunner.retryStage",
+        "title": "Retry Stage",
+        "icon": "$(redo)"
+      },
+      {
         "command": "azurePipelinesRunner.loadMoreBuilds",
         "title": "Load More Builds",
         "icon": "$(add)"
@@ -114,7 +119,12 @@
       {
         "command": "azurePipelinesRunner.retriggerBuild",
         "title": "Retrigger Build",
-        "icon": "$(debug-restart)"
+        "icon": "$(redo)"
+      },
+      {
+        "command": "azurePipelinesRunner.viewPinnedBuild",
+        "title": "Retained - Right-click the build number to the left to release retention leases",
+        "icon": "$(pinned)"
       },
       {
         "command": "azurePipelinesRunner.deleteBuild",
@@ -124,7 +134,17 @@
       {
         "command": "azurePipelinesRunner.cancelBuild",
         "title": "Cancel Build",
-        "icon": "$(stop-circle)"
+        "icon": "$(debug-stop)"
+      },
+      {
+        "command": "azurePipelinesRunner.retainBuildIndefinitely",
+        "title": "Retain Indefinitely",
+        "icon": "$(lock)"
+      },
+      {
+        "command": "azurePipelinesRunner.removeRetention",
+        "title": "Remove Retention",
+        "icon": "$(unlock)"
       },
       {
         "command": "azurePipelinesRunner.addAccount",
@@ -241,33 +261,58 @@
         },
         {
           "command": "azurePipelinesRunner.retriggerBuild",
-          "when": "viewItem == build",
+          "when": "viewItem == build || viewItem == build-pinned",
+          "group": "inline@2"
+        },
+        {
+          "command": "azurePipelinesRunner.cancelBuild",
+          "when": "viewItem == build-running || viewItem == build-running-pinned",
+          "group": "inline@3"
+        },
+        {
+          "command": "azurePipelinesRunner.openBuild",
+          "when": "viewItem == build || viewItem == build-pinned || viewItem == build-running || viewItem == build-running-pinned",
+          "group": "inline@4"
+        },
+        {
+          "command": "azurePipelinesRunner.viewPinnedBuild",
+          "when": "viewItem == build-pinned || viewItem == build-running-pinned",
           "group": "inline@1"
         },
         {
           "command": "azurePipelinesRunner.openBuild",
-          "when": "viewItem == build",
+          "when": "viewItem == build || viewItem == build-pinned || viewItem == build-running || viewItem == build-running-pinned",
           "group": "1_open@1"
         },
         {
           "command": "azurePipelinesRunner.cancelBuild",
-          "when": "viewItem == build",
+          "when": "viewItem == build-running || viewItem == build-running-pinned",
           "group": "2_actions@1"
         },
         {
-          "command": "azurePipelinesRunner.retainBuild",
-          "when": "viewItem == build",
+          "command": "azurePipelinesRunner.retainBuildIndefinitely",
+          "when": "viewItem == build || viewItem == build-running",
+          "group": "2_actions@2"
+        },
+        {
+          "command": "azurePipelinesRunner.removeRetention",
+          "when": "viewItem == build-pinned || viewItem == build-running-pinned",
           "group": "2_actions@2"
         },
         {
           "command": "azurePipelinesRunner.deleteBuild",
-          "when": "viewItem == build",
+          "when": "viewItem == build || viewItem == build-pinned",
           "group": "3_danger@1"
         },
         {
+          "command": "azurePipelinesRunner.retryStage",
+          "when": "viewItem == stage-stopped",
+          "group": "inline@1"
+        },
+        {
           "command": "azurePipelinesRunner.openStage",
-          "when": "viewItem == stage",
-          "group": "inline"
+          "when": "viewItem == stage || viewItem == stage-stopped",
+          "group": "inline@2"
         }
       ]
     },
@@ -317,6 +362,13 @@
           "minimum": 1,
           "maximum": 60,
           "description": "Polling interval in seconds for refreshing builds and stages (1-60 seconds)"
+        },
+        "azurePipelinesRunner.buildsPerPage": {
+          "type": "number",
+          "default": 5,
+          "minimum": 1,
+          "maximum": 50,
+          "description": "Number of builds to load per page (1-50 builds)"
         }
       }
     }

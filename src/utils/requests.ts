@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import * as yaml from "js-yaml";
-import { Build, PipelineById } from "../types/builds";
+import axios from "axios";
+import { Build, PipelineById, RetentionLease } from "../types/builds";
 import {
   PipelinesResponse,
   Pipeline,
@@ -83,19 +84,37 @@ export async function getBuildsByDefinitionId(
 
 export async function getCommitMessage(
   project: string,
-  repositoryId: string,
-  commitId: string
+  buildId: number
 ): Promise<string> {
   try {
     const { pat, organization } = await getConfiguration();
-    const url = `https://dev.azure.com/${organization}/${project}/_apis/git/repositories/${repositoryId}/commits/${commitId}?api-version=7.1`;
+    const url = `https://dev.azure.com/${organization}/${project}/_apis/build/builds/${buildId}/changes?api-version=7.1`;
     const response = await getAxiosInstance(pat).get(url);
-    return response.data.comment;
+    // Return the first change's message (most recent commit)
+    if (response.data.value && response.data.value.length > 0) {
+      return response.data.value[0].message;
+    }
+    return "";
   } catch (error) {
     vscode.window.showErrorMessage(
       "Error getting commit message. Please check if your PAT has the correct permissions."
     );
     return "";
+  }
+}
+
+export async function getRetentionLeases(
+  project: string,
+  buildId: number
+): Promise<RetentionLease[]> {
+  try {
+    const { pat, organization } = await getConfiguration();
+    const url = `https://dev.azure.com/${organization}/${project}/_apis/build/builds/${buildId}/leases?api-version=7.1`;
+    const response = await getAxiosInstance(pat).get<{ value: RetentionLease[] }>(url);
+    return response.data.value || [];
+  } catch (error) {
+    // Silently ignore errors for retention leases - it's not critical
+    return [];
   }
 }
 
@@ -126,11 +145,94 @@ export async function getStageLog(
   return response.data;
 }
 
-export async function getRemoteBranches(
+export async function getPipelineConfiguration(
   project: string,
-  repositoryId: string
+  pipelineId: number
+): Promise<{ repositoryType: string; repositoryFullName: string } | null> {
+  try {
+    const { pat, organization } = await getConfiguration();
+    const url = `https://dev.azure.com/${organization}/${project}/_apis/pipelines/${pipelineId}?api-version=7.1`;
+    const response = await getAxiosInstance(pat).get(url);
+    
+    return {
+      repositoryType: response.data.configuration.repository.type,
+      repositoryFullName: response.data.configuration.repository.fullName || response.data.configuration.repository.name
+    };
+  } catch (error) {
+    console.error("Error fetching pipeline configuration:", error);
+    return null;
+  }
+}
+
+export async function getGitHubBranches(
+  repositoryFullName: string
 ): Promise<string[]> {
   try {
+    // repositoryFullName format: "owner/repo"
+    const url = `https://api.github.com/repos/${repositoryFullName}/branches`;
+    const response = await axios.get(url);
+    const branches = response.data.map((branch: any) => branch.name);
+    return branches;
+  } catch (error) {
+    vscode.window.showErrorMessage(
+      "Error fetching GitHub branches. The repository may be private or doesn't exist."
+    );
+    return [];
+  }
+}
+
+export async function getGitHubFileContent(
+  repositoryFullName: string,
+  filePath: string,
+  branch: string
+): Promise<string | null> {
+  try {
+    // repositoryFullName format: "owner/repo"
+    // GitHub API: GET /repos/{owner}/{repo}/contents/{path}
+    const cleanPath = filePath.startsWith("/") ? filePath.substring(1) : filePath;
+    const url = `https://api.github.com/repos/${repositoryFullName}/contents/${encodeURIComponent(cleanPath)}?ref=${encodeURIComponent(branch)}`;
+    
+    console.log("Fetching GitHub file from URL:", url);
+    
+    const response = await axios.get(url);
+    
+    // GitHub returns base64 encoded content
+    if (response.data && response.data.content) {
+      const content = Buffer.from(response.data.content, 'base64').toString('utf-8');
+      console.log("GitHub file fetched successfully, length:", content.length);
+      return content;
+    }
+    
+    console.log("Unexpected GitHub response format:", response.data);
+    return null;
+  } catch (error: any) {
+    console.error("Error fetching GitHub file:", error);
+    if (error.response?.status === 404) {
+      vscode.window.showErrorMessage(
+        `File not found in GitHub repository: ${filePath}`
+      );
+    } else {
+      vscode.window.showErrorMessage(
+        "Error fetching file from GitHub. The repository may be private or doesn't exist."
+      );
+    }
+    return null;
+  }
+}
+
+export async function getRemoteBranches(
+  project: string,
+  repositoryId: string,
+  repositoryType?: string,
+  repositoryFullName?: string
+): Promise<string[]> {
+  try {
+    // If GitHub repository type
+    if (repositoryType === "gitHub" && repositoryFullName) {
+      return await getGitHubBranches(repositoryFullName);
+    }
+    
+    // Default to Azure Repos API
     const { pat, organization } = await getConfiguration();
     const url = `https://dev.azure.com/${organization}/${project}/_apis/git/repositories/${repositoryId}/refs?filter=heads/&api-version=7.1`;
     const response = await getAxiosInstance(pat).get(url);
@@ -216,27 +318,37 @@ export async function deleteBuild(
 export async function retainBuild(
   project: string,
   buildId: number,
+  definitionId: number,
   retain: boolean
 ): Promise<boolean> {
   try {
     const { pat, organization } = await getConfiguration();
     
     if (retain) {
+      // Get current user's connection data to retrieve user ID
+      const connectionDataUrl = `https://dev.azure.com/${organization}/_apis/connectionData?api-version=6.0-preview`;
+      const connectionDataResponse = await getAxiosInstance(pat).get(connectionDataUrl);
+      const userId = connectionDataResponse.data.authenticatedUser.id;
+      
       // Create retention lease
-      const url = `https://dev.azure.com/${organization}/${project}/_apis/build/retention/leases?api-version=7.1`;
-      await getAxiosInstance(pat).post(url, {
+      const url = `https://dev.azure.com/${organization}/${project}/_apis/build/retention/leases?api-version=6.0-preview.2`;
+      await getAxiosInstance(pat).post(url, [{
+        definitionId: definitionId,
         runId: buildId,
+        ownerId: `User:${userId}`,
         protectPipeline: false,
-        daysValid: 3650, // ~10 years
-      });
+        daysValid: 365000, // ~1000 years
+      }]);
     } else {
       // Get leases for this build and delete them
-      const listUrl = `https://dev.azure.com/${organization}/${project}/_apis/build/retention/leases?runId=${buildId}&api-version=7.1`;
+      const listUrl = `https://dev.azure.com/${organization}/${project}/_apis/build/retention/leases?definitionId=${definitionId}&runId=${buildId}&api-version=6.0-preview.2`;
       const response = await getAxiosInstance(pat).get(listUrl);
       const leases = response.data.value || [];
       
-      for (const lease of leases) {
-        const deleteUrl = `https://dev.azure.com/${organization}/${project}/_apis/build/retention/leases/${lease.leaseId}?api-version=7.1`;
+      if (leases.length > 0) {
+        // Delete all leases using the ids query parameter
+        const leaseIds = leases.map((lease: any) => lease.leaseId).join(',');
+        const deleteUrl = `https://dev.azure.com/${organization}/${project}/_apis/build/retention/leases?ids=${leaseIds}&api-version=6.0-preview.2`;
         await getAxiosInstance(pat).delete(deleteUrl);
       }
     }
@@ -320,9 +432,17 @@ export async function getPipelineYaml(
   project: string,
   repositoryId: string,
   yamlPath: string,
-  branch: string = "main"
+  branch: string = "main",
+  repositoryType?: string,
+  repositoryFullName?: string
 ): Promise<string | null> {
   try {
+    // If GitHub repository type, use GitHub API
+    if (repositoryType === "gitHub" && repositoryFullName) {
+      return await getGitHubFileContent(repositoryFullName, yamlPath, branch);
+    }
+    
+    // Default to Azure Repos API
     const { pat, organization } = await getConfiguration();
     // Remove leading slash if present
     const cleanPath = yamlPath.startsWith("/") ? yamlPath.substring(1) : yamlPath;
@@ -430,3 +550,39 @@ export function parseYamlParameters(yamlContent: string): PipelineParameter[] {
   console.log("Total parameters found:", parameters.length);
   return parameters;
 }
+
+export async function getBuildDetails(
+  project: string,
+  buildId: number
+): Promise<Build> {
+  const { pat, organization } = await getConfiguration();
+  const url = `https://dev.azure.com/${organization}/${project}/_apis/build/builds/${buildId}?api-version=7.1`;
+  const response = await getAxiosInstance(pat).get<Build>(url);
+  return response.data;
+}
+
+export async function retryBuildFailedJobs(
+  project: string,
+  buildId: number
+): Promise<void> {
+  const { pat, organization } = await getConfiguration();
+  const url = `https://dev.azure.com/${organization}/${project}/_apis/build/builds/${buildId}?retry=true&api-version=7.1`;
+  await getAxiosInstance(pat).patch(url, {});
+}
+
+export async function retryStage(
+  project: string,
+  buildId: number,
+  stageIdentifier: string,
+  forceRetryAllJobs: boolean,
+  retryDependencies: boolean
+): Promise<void> {
+  const { pat, organization } = await getConfiguration();
+  const url = `https://dev.azure.com/${organization}/${project}/_apis/build/builds/${buildId}/stages/${stageIdentifier}?api-version=7.1`;
+  await getAxiosInstance(pat).patch(url, {
+    state: 1,
+    forceRetryAllJobs: forceRetryAllJobs,
+    retryDependencies: retryDependencies,
+  });
+}
+

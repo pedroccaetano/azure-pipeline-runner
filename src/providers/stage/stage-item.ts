@@ -7,13 +7,23 @@ export class StageItem extends vscode.TreeItem {
     public readonly label: string,
     public readonly collapsibleState: vscode.TreeItemCollapsibleState,
     public readonly contextValue: string,
-    public readonly timelineRecord: TimelineRecord
+    public readonly timelineRecord: TimelineRecord,
+    public readonly isWaitingForApproval: boolean = false
   ) {
     super(label, collapsibleState);
     this.iconPath = this.getIconPath();
+    this.tooltip = this.getTooltip();
     
+    // Set command for stages waiting for approval (highest priority)
+    if (this.isWaitingForApproval) {
+      this.command = {
+        command: "azurePipelinesRunner.approveStage",
+        title: "Approve or Reject Stage",
+        arguments: [{ timelineRecord: this.timelineRecord }]
+      };
+    }
     // Only set command for tasks (which have logs), not for stages or jobs
-    if (this.timelineRecord.type === "Task" && this.timelineRecord.log) {
+    else if (this.timelineRecord.type === "Task" && this.timelineRecord.log) {
       this.command = {
         command: "azurePipelinesRunner.openStageLog",
         title: "Open Task Log",
@@ -23,6 +33,11 @@ export class StageItem extends vscode.TreeItem {
   }
 
   private getIconPath(): vscode.ThemeIcon {
+    // Check for approval waiting state first (highest priority)
+    if (this.isWaitingForApproval) {
+      return new vscode.ThemeIcon("workspace-unknown", new vscode.ThemeColor("testing.iconQueued"));
+    }
+
     switch (this.timelineRecord.result) {
       case "succeeded":
         return new vscode.ThemeIcon("pass", new vscode.ThemeColor("testing.iconPassed"));
@@ -34,17 +49,24 @@ export class StageItem extends vscode.TreeItem {
       case "succeededWithIssues":
         return new vscode.ThemeIcon("warning", new vscode.ThemeColor("testing.iconQueued"));
       case "skipped":
-        return new vscode.ThemeIcon("debug-step-over");
+        return new vscode.ThemeIcon("skip", new vscode.ThemeColor("icon.foreground"));
       default:
         if (this.timelineRecord.state === "inProgress") {
           return new vscode.ThemeIcon("loading~spin");
         }
 
         if (this.timelineRecord.state === "pending" || this.timelineRecord.state === "notStarted") {
-          return new vscode.ThemeIcon("clock", new vscode.ThemeColor("testing.iconQueued"));
+          return new vscode.ThemeIcon("clockface", new vscode.ThemeColor("charts.blue"));
         }
 
         return new vscode.ThemeIcon("circle-outline");
     }
+  }
+
+  private getTooltip(): string {
+    if (this.isWaitingForApproval) {
+      return `⏳ Waiting for manual approval\n${this.timelineRecord.name}`;
+    }
+    return this.timelineRecord.name;
   }
 }

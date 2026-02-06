@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import {
   getBuildsByDefinitionId,
   getCommitMessage,
+  getRetentionLeases,
 } from "../../utils/requests";
 import { Build } from "../../types/builds";
 import { Pipeline, Project } from "../../types/types";
@@ -23,6 +24,9 @@ export class BuildTreeDataProvider
   private pollingIntervalId: NodeJS.Timeout | undefined;
   private configChangeListener: vscode.Disposable | undefined;
   private isViewVisible: boolean = true;
+  private isManualRefresh: boolean = false;
+  private isLoading: boolean = false;
+  private isLoadingMore: boolean = false;
 
   constructor() {
     // Listen for configuration changes
@@ -98,7 +102,7 @@ export class BuildTreeDataProvider
     const intervalMs = intervalSeconds * 1000;
 
     this.pollingIntervalId = setInterval(() => {
-      this.refreshBuilds();
+      this.refreshBuilds(false);
     }, intervalMs);
     this.updateContextState(true);
   }
@@ -141,6 +145,48 @@ export class BuildTreeDataProvider
 
   async getChildren(element?: BuildItem): Promise<BuildItem[]> {
     if (!element) {
+      if (this.isLoading) {
+        return [
+          new BuildItem(
+            "Loading builds...",
+            vscode.TreeItemCollapsibleState.None,
+            "loading",
+            undefined,
+            undefined,
+            undefined
+          ),
+        ];
+      }
+      
+      // Add "Load more..." item or loading spinner if there are more builds available
+      if (this.builds.length > 0 && this.builds.length < this.allBuilds.length) {
+        if (this.isLoadingMore) {
+          const loadingItem = new BuildItem(
+            "Loading more builds...",
+            vscode.TreeItemCollapsibleState.None,
+            "loading",
+            undefined,
+            undefined,
+            undefined
+          );
+          return [...this.builds, loadingItem];
+        } else {
+          const loadMoreItem = new BuildItem(
+            "Load more...",
+            vscode.TreeItemCollapsibleState.None,
+            "load-more",
+            undefined,
+            undefined,
+            undefined
+          );
+          loadMoreItem.command = {
+            command: "azurePipelinesRunner.loadMoreBuilds",
+            title: "Load More Builds",
+          };
+          return [...this.builds, loadMoreItem];
+        }
+      }
+      
       return this.builds;
     }
     return [];
@@ -149,6 +195,12 @@ export class BuildTreeDataProvider
   async loadBuilds(pipeline: Pipeline, project: Project): Promise<void> {
     // CRITICAL: Stop any existing polling from previous pipeline
     this.stopPolling();
+    this.isManualRefresh = true;
+
+    // Show loading indicator in tree view
+    this.isLoading = true;
+    this.builds = [];
+    this._onDidChangeTreeData.fire();
 
     await this.showProgress(
       `Loading builds for ${pipeline.name}`,
@@ -163,22 +215,37 @@ export class BuildTreeDataProvider
           );
 
           if (builds.length === 0) {
+            this.isLoading = false;
+            this._onDidChangeTreeData.fire();
             vscode.window.showWarningMessage("No builds found!");
+            this.isManualRefresh = false;
             return;
           }
 
           this.allBuilds = builds;
-          const firstBuilds = builds.slice(0, 5);
+          const config = vscode.workspace.getConfiguration("azurePipelinesRunner");
+          const buildsPerPage = config.get<number>("buildsPerPage", 5);
+          const firstBuilds = builds.slice(0, buildsPerPage);
 
           await this.appendCommitMessages(firstBuilds, project.name);
 
+          // Fetch retention leases for manual refresh
+          if (this.isManualRefresh) {
+            await this.fetchRetentionLeases(firstBuilds, project.name);
+          }
+
           this.builds = this.createBuildItems(firstBuilds, project, pipeline);
+          this.isLoading = false;
           this._onDidChangeTreeData.fire();
           progress.report({ increment: 100 });
+
+          this.isManualRefresh = false;
 
           // Start polling if needed for the new pipeline
           this.updatePollingState();
         } catch (error) {
+          this.isLoading = false;
+          this.isManualRefresh = false;
           let errorMessage = "Unknown error";
           if (error instanceof Error) {
             errorMessage = error.message;
@@ -191,7 +258,7 @@ export class BuildTreeDataProvider
     );
   }
 
-  async refreshBuilds(): Promise<void> {
+  async refreshBuilds(isManual: boolean = false): Promise<void> {
     // Check if polling is enabled
     const config = vscode.workspace.getConfiguration("azurePipelinesRunner");
     const pollingEnabled = config.get<boolean>("enablePolling", true);
@@ -200,69 +267,122 @@ export class BuildTreeDataProvider
       return;
     }
 
-    if (this.builds.length === 0) {
+    if (this.builds.length === 0 || !this.currentPipeline || !this.currentProject) {
       return;
     }
 
-    const projectName = this.builds[0].project?.name as string;
-    const pipelineId = this.builds[0].pipeline?.id as number;
+    // Set the manual refresh flag
+    this.isManualRefresh = isManual;
 
-    await this.loadBuilds(
-      { id: pipelineId, name: this.builds[0].pipeline?.name } as Pipeline,
-      { name: projectName } as Project
-    );
+    try {
+      // Get all builds to update the allBuilds cache
+      const allBuilds = await getBuildsByDefinitionId(
+        this.currentProject.name,
+        this.currentPipeline.id
+      );
+      this.allBuilds = allBuilds;
 
-    // Note: updatePollingState() is already called within loadBuilds()
+      // Only update the builds currently displayed
+      const currentCount = this.builds.length;
+      const buildsToUpdate = allBuilds.slice(0, currentCount);
+
+      await this.appendCommitMessages(buildsToUpdate, this.currentProject.name);
+
+      // Fetch retention leases only on manual refresh
+      if (this.isManualRefresh) {
+        await this.fetchRetentionLeases(buildsToUpdate, this.currentProject.name);
+      }
+
+      this.builds = this.createBuildItems(
+        buildsToUpdate,
+        this.currentProject,
+        this.currentPipeline
+      );
+      this._onDidChangeTreeData.fire();
+
+      this.isManualRefresh = false;
+
+      // Update polling state based on current builds
+      this.updatePollingState();
+    } catch (error) {
+      this.isManualRefresh = false;
+      let errorMessage = "Unknown error";
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      vscode.window.showErrorMessage(
+        `Failed to refresh builds: ${errorMessage}`
+      );
+    }
   }
 
   async loadMoreBuilds(): Promise<void> {
-    await this.showProgress(
-      `Loading more builds for ${this.builds[0].pipeline?.name}`,
-      async (progress) => {
-        try {
-          const nextBuilds = this.allBuilds.slice(
-            this.builds.length,
-            this.builds.length + 5
-          );
-          const projectName = this.builds[0].project?.name;
+    this.isLoadingMore = true;
+    this._onDidChangeTreeData.fire();
 
-          await this.appendCommitMessages(nextBuilds, projectName as string);
+    try {
+      const config = vscode.workspace.getConfiguration("azurePipelinesRunner");
+      const buildsPerPage = config.get<number>("buildsPerPage", 5);
+      const nextBuilds = this.allBuilds.slice(
+        this.builds.length,
+        this.builds.length + buildsPerPage
+      );
+      const projectName = this.builds[0].project?.name;
 
-          const buildItems = this.createBuildItems(
-            nextBuilds,
-            this.builds[0].project as Project,
-            this.builds[0].pipeline as Pipeline
-          );
-          this.builds = [...this.builds, ...buildItems];
-          this._onDidChangeTreeData.fire();
-          progress.report({ increment: 100 });
-        } catch (error) {
-          let errorMessage = "Unknown error";
-          if (error instanceof Error) {
-            errorMessage = error.message;
-          }
-          vscode.window.showErrorMessage(
-            `Failed to load builds: ${errorMessage}`
-          );
-        }
+      await this.appendCommitMessages(nextBuilds, projectName as string);
+
+      // Fetch retention leases for newly loaded builds
+      await this.fetchRetentionLeases(nextBuilds, projectName as string);
+
+      const buildItems = this.createBuildItems(
+        nextBuilds,
+        this.builds[0].project as Project,
+        this.builds[0].pipeline as Pipeline
+      );
+      this.builds = [...this.builds, ...buildItems];
+      this.isLoadingMore = false;
+      this._onDidChangeTreeData.fire();
+    } catch (error) {
+      this.isLoadingMore = false;
+      this._onDidChangeTreeData.fire();
+      let errorMessage = "Unknown error";
+      if (error instanceof Error) {
+        errorMessage = error.message;
       }
-    );
+      vscode.window.showErrorMessage(
+        `Failed to load more builds: ${errorMessage}`
+      );
+    }
   }
 
   private async appendCommitMessages(
     builds: Build[],
     projectName: string
   ): Promise<void> {
-    for (const build of builds) {
-      if (build.appendCommitMessageToRunName) {
-        const commitMessage = await getCommitMessage(
-          projectName,
-          build.repository.id,
-          build.sourceVersion
-        );
+    const buildsNeedingCommit = builds.filter(b => b.appendCommitMessageToRunName);
+    await Promise.all(
+      buildsNeedingCommit.map(async (build) => {
+        const commitMessage = await getCommitMessage(projectName, build.id);
         build.commitMessage = commitMessage;
-      }
-    }
+      })
+    );
+  }
+
+  private async fetchRetentionLeases(
+    builds: Build[],
+    projectName: string
+  ): Promise<void> {
+    await Promise.all(
+      builds.map(async (build) => {
+        try {
+          const leases = await getRetentionLeases(projectName, build.id);
+          build.retentionLeases = leases;
+        } catch (error) {
+          // Silently ignore errors, just don't set retention leases
+          build.retentionLeases = [];
+        }
+      })
+    );
   }
 
   private createBuildItems(
@@ -270,17 +390,28 @@ export class BuildTreeDataProvider
     project: Project,
     pipeline: Pipeline
   ): BuildItem[] {
-    return builds.map(
-      (build) =>
-        new BuildItem(
-          `#${build.buildNumber} • ${build.commitMessage?.split("\n")[0]}`,
-          vscode.TreeItemCollapsibleState.None,
-          "build",
-          [build],
-          project,
-          pipeline
-        )
-    );
+    return builds.map((build) => {
+      const label = `#${build.buildNumber} • ${build.commitMessage?.split("\n")[0]}`;
+      const isPinned = build.retentionLeases && build.retentionLeases.length > 0;
+      const status = build.status?.toLowerCase();
+      const isRunning = status === "inprogress" || status === "notstarted" || status === "cancelling";
+      
+      let contextValue: string;
+      if (isRunning) {
+        contextValue = isPinned ? "build-running-pinned" : "build-running";
+      } else {
+        contextValue = isPinned ? "build-pinned" : "build";
+      }
+      
+      return new BuildItem(
+        label,
+        vscode.TreeItemCollapsibleState.None,
+        contextValue,
+        [build],
+        project,
+        pipeline
+      );
+    });
   }
 
   private async showProgress(

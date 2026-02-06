@@ -15,6 +15,7 @@ import {
   getConfiguration,
   getStageLog,
   getRemoteBranches,
+  getPipelineConfiguration,
   runPipeline,
   getPipelineDefinition,
   getPipelineYaml,
@@ -427,12 +428,209 @@ export function registerCommands(
   );
 
   context.subscriptions.push(
+    vscode.commands.registerCommand(
+      "azurePipelinesRunner.retryStage",
+      async ({ timelineRecord }: { timelineRecord: TimelineRecord }) => {
+        try {
+          // Validate that this is a Stage
+          if (timelineRecord.type !== "Stage") {
+            vscode.window.showErrorMessage(
+              "Retry is only available for stages."
+            );
+            return;
+          }
+
+          // Validate that stage has an identifier
+          if (!timelineRecord.identifier) {
+            vscode.window.showErrorMessage(
+              "Stage identifier is not available. Cannot retry this stage."
+            );
+            return;
+          }
+
+          // Get all records for checkpoint detection
+          const allRecords = stageTreeDataProvider.getAllRecords();
+          
+          // Import the retry service
+          const { handleStageRetry } = await import("../services/stage-retry-service.js");
+          
+          // Handle the retry
+          await handleStageRetry(
+            timelineRecord.projectName,
+            timelineRecord.buildId,
+            timelineRecord.id,
+            timelineRecord.identifier,
+            timelineRecord.name,
+            allRecords
+          );
+          
+          // Refresh the stages tree after retry
+          setTimeout(() => {
+            stageTreeDataProvider.refreshStages();
+          }, 2000);
+        } catch (error) {
+          let errorMessage = "Unknown error";
+          if (error instanceof Error) {
+            errorMessage = error.message;
+          }
+          vscode.window.showErrorMessage(
+            `Failed to retry stage: ${errorMessage}`
+          );
+        }
+      }
+    )
+  );
+
+  context.subscriptions.push(
     vscode.commands.registerCommand("azurePipelinesRunner.showWelcome", () => {
       vscode.commands.executeCommand(
         "workbench.action.openSettings",
         "azurePipelinesRunner"
       );
     })
+  );
+
+  // Approve Stage Command
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      "azurePipelinesRunner.approveStage",
+      async ({ timelineRecord }: { timelineRecord: TimelineRecord }) => {
+        try {
+          // Get current account
+          const accounts = await accountManager.getAccounts();
+          const activeAccount = accounts.find((a) => a.isActive);
+          
+          if (!activeAccount) {
+            vscode.window.showErrorMessage(
+              "No active account. Please add and activate an account first."
+            );
+            return;
+          }
+
+          // Get project and build context from the stage tree data provider
+          const project = stageTreeDataProvider.getCurrentProject();
+          const build = stageTreeDataProvider.getCurrentBuild();
+
+          if (!project || !build) {
+            vscode.window.showErrorMessage(
+              "Unable to determine project or build context."
+            );
+            return;
+          }
+
+          // Get the approval ID for this stage
+          const approvalId = await vscode.window.withProgress(
+            {
+              location: vscode.ProgressLocation.Notification,
+              title: "Fetching approval details...",
+              cancellable: false,
+            },
+            async () => {
+              const { getApprovalIdForStage } = await import(
+                "../utils/approval-detection.js"
+              );
+              return await getApprovalIdForStage(
+                activeAccount.organization,
+                project.name,
+                build.id,
+                timelineRecord.id,
+                activeAccount.pat
+              );
+            }
+          );
+
+          if (!approvalId) {
+            vscode.window.showErrorMessage(
+              "Unable to find approval ID for this stage. The stage might not require approval."
+            );
+            return;
+          }
+
+          // Show QuickPick for approve/reject decision
+          const decision = await vscode.window.showQuickPick(
+            [
+              {
+                label: "$(check) Approve",
+                description: "Approve this stage to continue the pipeline",
+                value: "approve"
+              },
+              {
+                label: "$(x) Reject",
+                description: "Reject this stage and fail the pipeline",
+                value: "reject"
+              }
+            ],
+            {
+              placeHolder: `Choose action for stage: ${timelineRecord.name}`,
+              title: "Stage Approval"
+            }
+          );
+
+          if (!decision) {
+            return; // User cancelled
+          }
+
+          // Prompt for optional comment
+          const comment = await vscode.window.showInputBox({
+            prompt: "Enter an optional comment (press Enter to skip)",
+            placeHolder: "Optional comment",
+            value: ""
+          });
+
+          if (comment === undefined) {
+            return; // User cancelled
+          }
+
+          // Perform the approval/rejection
+          const actionText = decision.value === "approve" ? "Approving" : "Rejecting";
+          await vscode.window.withProgress(
+            {
+              location: vscode.ProgressLocation.Notification,
+              title: `${actionText} stage: ${timelineRecord.name}...`,
+              cancellable: false,
+            },
+            async () => {
+              const { approveStage, rejectStage } = await import(
+                "../services/approval-service.js"
+              );
+
+              if (decision.value === "approve") {
+                await approveStage(
+                  activeAccount.organization,
+                  project.name,
+                  approvalId,
+                  comment,
+                  activeAccount.pat
+                );
+              } else {
+                await rejectStage(
+                  activeAccount.organization,
+                  project.name,
+                  approvalId,
+                  comment,
+                  activeAccount.pat
+                );
+              }
+            }
+          );
+
+          const actionPast = decision.value === "approve" ? "approved" : "rejected";
+          vscode.window.showInformationMessage(
+            `Stage "${timelineRecord.name}" ${actionPast} successfully`
+          );
+
+          // Refresh the stage tree to show updated status
+          setTimeout(() => {
+            stageTreeDataProvider.refreshStages();
+          }, 1000); // Give API a moment to update
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "Unknown error";
+          vscode.window.showErrorMessage(
+            `Failed to process stage approval: ${message}`
+          );
+        }
+      }
+    )
   );
 
   context.subscriptions.push(
@@ -477,7 +675,7 @@ export function registerCommands(
     vscode.commands.registerCommand(
       "azurePipelinesRunner.refreshBuilds",
       async () => {
-        await buildTreeDataProvider.refreshBuilds();
+        await buildTreeDataProvider.refreshBuilds(true);
         stageTreeDataProvider.refresh();
       }
     )
@@ -599,7 +797,7 @@ export function registerCommands(
               `Build successfully retriggered on branch: ${branch}`
             );
             // Refresh builds list
-            await buildTreeDataProvider.refreshBuilds();
+            await buildTreeDataProvider.refreshBuilds(true);
           }
         } catch (error) {
           let errorMessage = "Unknown error";
@@ -652,7 +850,7 @@ export function registerCommands(
               `Build #${build.buildNumber} successfully deleted`
             );
             // Refresh builds list
-            await buildTreeDataProvider.refreshBuilds();
+            await buildTreeDataProvider.refreshBuilds(true);
           }
         } catch (error) {
           let errorMessage = "Unknown error";
@@ -712,7 +910,7 @@ export function registerCommands(
               `Build #${build.buildNumber} is being cancelled`
             );
             // Refresh builds list
-            await buildTreeDataProvider.refreshBuilds();
+            await buildTreeDataProvider.refreshBuilds(true);
           }
         } catch (error) {
           let errorMessage = "Unknown error";
@@ -721,6 +919,125 @@ export function registerCommands(
           }
           vscode.window.showErrorMessage(
             `Failed to cancel build: ${errorMessage}`
+          );
+        }
+      }
+    )
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      "azurePipelinesRunner.retainBuildIndefinitely",
+      async ({ builds, project }: { builds: Build[]; project: Project }) => {
+        try {
+          const build = builds[0];
+          if (!build) {
+            vscode.window.showErrorMessage("No build found to retain.");
+            return;
+          }
+
+          const success = await vscode.window.withProgress(
+            {
+              location: vscode.ProgressLocation.Notification,
+              title: `Retaining build #${build.buildNumber}...`,
+              cancellable: false,
+            },
+            async () => {
+              return await retainBuild(project.name, build.id, build.definition.id, true);
+            }
+          );
+
+          if (success) {
+            vscode.window.showInformationMessage(
+              `Build #${build.buildNumber} will be retained indefinitely`
+            );
+            // Refresh builds list to update retention lease status
+            await buildTreeDataProvider.refreshBuilds(true);
+          }
+        } catch (error) {
+          let errorMessage = "Unknown error";
+          if (error instanceof Error) {
+            errorMessage = error.message;
+          }
+          vscode.window.showErrorMessage(
+            `Failed to retain build: ${errorMessage}`
+          );
+        }
+      }
+    )
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      "azurePipelinesRunner.removeRetention",
+      async ({ builds, project }: { builds: Build[]; project: Project }) => {
+        try {
+          const build = builds[0];
+          if (!build) {
+            vscode.window.showErrorMessage("No build found.");
+            return;
+          }
+
+          const success = await vscode.window.withProgress(
+            {
+              location: vscode.ProgressLocation.Notification,
+              title: `Removing retention from build #${build.buildNumber}...`,
+              cancellable: false,
+            },
+            async () => {
+              return await retainBuild(project.name, build.id, build.definition.id, false);
+            }
+          );
+
+          if (success) {
+            vscode.window.showInformationMessage(
+              `Retention removed from build #${build.buildNumber}`
+            );
+            // Refresh builds list to update retention lease status
+            await buildTreeDataProvider.refreshBuilds(true);
+          }
+        } catch (error) {
+          let errorMessage = "Unknown error";
+          if (error instanceof Error) {
+            errorMessage = error.message;
+          }
+          vscode.window.showErrorMessage(
+            `Failed to remove retention: ${errorMessage}`
+          );
+        }
+      }
+    )
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      "azurePipelinesRunner.viewPinnedBuild",
+      async ({ builds, project }: { builds: Build[]; project: Project }) => {
+        try {
+          const build = builds[0];
+          if (!build) {
+            vscode.window.showErrorMessage("No build found.");
+            return;
+          }
+
+          if (!build.retentionLeases || build.retentionLeases.length === 0) {
+            vscode.window.showInformationMessage(
+              `Build #${build.buildNumber} is not pinned.`
+            );
+            return;
+          }
+
+          const leaseCount = build.retentionLeases.length;
+          const message = `Build #${build.buildNumber} is pinned with ${leaseCount} retention ${leaseCount === 1 ? 'lease' : 'leases'}. This build is protected from deletion. Right-click the build number to remove the retention lease.`;
+          
+          vscode.window.showInformationMessage(message);
+        } catch (error) {
+          let errorMessage = "Unknown error";
+          if (error instanceof Error) {
+            errorMessage = error.message;
+          }
+          vscode.window.showErrorMessage(
+            `Failed to view pinned build: ${errorMessage}`
           );
         }
       }
@@ -769,6 +1086,12 @@ export function registerCommands(
 
           const repositoryId = builds[0].repository.id;
 
+          // Get pipeline configuration to determine repository type
+          const pipelineConfig = await getPipelineConfiguration(
+            currentProject.name,
+            currentPipeline.id
+          );
+
           // Fetch remote branches
           const branches = await vscode.window.withProgress(
             {
@@ -779,7 +1102,9 @@ export function registerCommands(
             async () => {
               return await getRemoteBranches(
                 currentProject.name,
-                repositoryId
+                repositoryId,
+                pipelineConfig?.repositoryType,
+                pipelineConfig?.repositoryFullName
               );
             }
           );
@@ -831,7 +1156,9 @@ export function registerCommands(
                 currentProject.name,
                 repoId,
                 yamlPath,
-                selectedBranch
+                selectedBranch,
+                pipelineConfig?.repositoryType,
+                pipelineConfig?.repositoryFullName
               );
 
               if (yamlContent) {
@@ -909,7 +1236,7 @@ export function registerCommands(
             const retryDelay = 1000; // 1 second
             
             for (let i = 0; i < maxRetries; i++) {
-              await buildTreeDataProvider.refreshBuilds();
+              await buildTreeDataProvider.refreshBuilds(true);
               
               // Check if the new build appears in the list by importing and checking
               const { getBuildsByDefinitionId } = await import(

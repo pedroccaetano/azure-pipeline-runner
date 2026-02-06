@@ -5,8 +5,12 @@ import { TimelineRecord } from "../../types/stages";
 import { getBuildStages } from "../../utils/requests";
 import { StageItem } from "./stage-item";
 import { formatDuration } from "../../utils/format-duration";
+import { isStageWaitingForApproval } from "../../utils/approval-detection";
 
 const STAGE_CONTEXT_VALUE = "stage";
+const STAGE_STOPPED_CONTEXT_VALUE = "stage-stopped";
+const PHASE_CONTEXT_VALUE = "phase";
+const TASK_CONTEXT_VALUE = "task";
 
 export class StageTreeDataProvider
   implements vscode.TreeDataProvider<StageItem>, vscode.Disposable
@@ -38,6 +42,18 @@ export class StageTreeDataProvider
   setViewVisible(visible: boolean): void {
     this.isViewVisible = visible;
     this.updatePollingState();
+  }
+
+  getCurrentProject(): Project | undefined {
+    return this.project;
+  }
+
+  getCurrentBuild(): Build | undefined {
+    return this.build;
+  }
+
+  getAllRecords(): TimelineRecord[] {
+    return this.allRecords;
   }
 
   pausePolling(): void {
@@ -124,18 +140,39 @@ export class StageTreeDataProvider
   async getChildren(element?: StageItem): Promise<StageItem[]> {
     if (!element) {
       return this.records;
-    } else if (element.contextValue === STAGE_CONTEXT_VALUE) {
-      const children = this.allRecords
+    } else if (
+      element.contextValue === STAGE_CONTEXT_VALUE ||
+      element.contextValue === STAGE_STOPPED_CONTEXT_VALUE ||
+      element.contextValue === PHASE_CONTEXT_VALUE
+    ) {
+      // Get direct children (excluding Jobs since they're hidden)
+      const directChildren = this.allRecords
         .filter((record) => record.name !== "Checkpoint")
-        .filter((record) => record.parentId === element.timelineRecord.id)
-        .sort((a, b) => {
+        .filter((record) => record.type !== "Job")
+        .filter((record) => record.parentId === element.timelineRecord.id);
+
+      // If this is a Phase, also get Tasks from the hidden Job child
+      const children = element.timelineRecord.type === "Phase"
+        ? this.allRecords
+            .filter((record) => {
+              // Find the Job child of this Phase
+              const jobChild = this.allRecords.find(
+                (r) => r.type === "Job" && r.parentId === element.timelineRecord.id
+              );
+              // Include Tasks that are children of that Job
+              return jobChild && record.parentId === jobChild.id && record.name !== "Checkpoint";
+            })
+        : directChildren;
+
+      return this.createStageItems(
+        (children.length > 0 ? children : directChildren).sort((a, b) => {
           if (a.order && b.order) {
             return a.order - b.order;
           }
           return 0;
-        });
-
-      return this.createStageItems(children, this.allRecords);
+        }),
+        this.allRecords
+      );
     }
 
     return [];
@@ -196,6 +233,12 @@ export class StageTreeDataProvider
         (child) => child.parentId === record.id
       );
 
+      // Check if this stage is waiting for approval
+      const waitingForApproval = isStageWaitingForApproval(
+        record.id,
+        allRecords
+      );
+
       if (record?.startTime && record?.finishTime) {
         const startTime = new Date(record.startTime);
         const finishTime = new Date(record.finishTime);
@@ -203,13 +246,26 @@ export class StageTreeDataProvider
         record.name += " • " + formatDuration(totalTime);
       }
 
+      // Determine the appropriate context value based on the record type and state
+      let contextValue = STAGE_CONTEXT_VALUE;
+      if (record.type === "Phase") {
+        contextValue = PHASE_CONTEXT_VALUE;
+      } else if (record.type === "Task") {
+        contextValue = TASK_CONTEXT_VALUE;
+      } else if (record.type === "Stage") {
+        // Check if the stage is stopped (not in progress or pending)
+        const isRunning = record.state === "inProgress" || record.state === "pending" || record.state === "notStarted";
+        contextValue = isRunning ? STAGE_CONTEXT_VALUE : STAGE_STOPPED_CONTEXT_VALUE;
+      }
+
       return new StageItem(
         record.name,
         hasChildren
           ? vscode.TreeItemCollapsibleState.Collapsed
           : vscode.TreeItemCollapsibleState.None,
-        STAGE_CONTEXT_VALUE,
-        record
+        contextValue,
+        record,
+        waitingForApproval
       );
     });
   }

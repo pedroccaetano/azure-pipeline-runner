@@ -38,6 +38,15 @@ type Build = {
   appendCommitMessageToRunName: boolean;
   commitMessage?: string;
   keepForever?: boolean;
+  retentionLeases?: RetentionLease[];
+};
+
+type RetentionLease = {
+  leaseId: number;
+  ownerId: string;
+  createdDate: string;
+  protectPipeline: boolean;
+  runId: number;
 };
 
 type Links = {
@@ -140,4 +149,4 @@ type Repository = {
 
 
 
-export { PipelineById,Build };
+export { PipelineById, Build, RetentionLease };

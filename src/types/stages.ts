@@ -57,3 +57,15 @@ export interface Issue {
   message: string;
   data: { [key: string]: string };
 }
+
+export type StageRetryMethod = 
+  | 'build-level-retry'      // Retry failed jobs at build level
+  | 'stage-level-retry'      // Retry stage (for checkpoint failures)
+  | 'stage-level-rerun';     // Rerun completed stage
+
+export interface StageRetryDecision {
+  method: StageRetryMethod;
+  stageIdentifier?: string;  // Required for stage-level operations
+  buildId: number;
+  projectName: string;
+}

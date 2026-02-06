@@ -130,7 +130,8 @@ export class PipelineTreeDataProvider
               vscode.TreeItemCollapsibleState.Collapsed,
               "folder",
               undefined,
-              element.project
+              element.project,
+              "\\" + folder
             )
         ),
         ...rootPipelines.map(
@@ -147,7 +148,8 @@ export class PipelineTreeDataProvider
       return rootItems;
     } else if (element?.contextValue === "folder") {
       // Handle folder level
-      const childItems = this.getChildItems(element.label);
+      const parentPath = element.folderPath || element.label;
+      const childItems = this.getChildItems(parentPath);
       return childItems.map(
         (item) =>
           new PipelineItem(
@@ -157,7 +159,8 @@ export class PipelineTreeDataProvider
               : vscode.TreeItemCollapsibleState.None,
             item.isFolder ? "folder" : "pipeline",
             item.pipeline,
-            element.project
+            element.project,
+            item.folderPath
           )
       );
     } else if (element?.contextValue === "pipeline") {
@@ -184,21 +187,36 @@ export class PipelineTreeDataProvider
   }
 
   private getChildItems(
-    folder: string
-  ): { label: string; isFolder: boolean; pipeline?: Pipeline }[] {
+    parentPath: string
+  ): { label: string; isFolder: boolean; pipeline?: Pipeline; folderPath?: string }[] {
     const childFolders = new Set<string>();
     const childPipelines: {
       label: string;
       isFolder: boolean;
       pipeline?: Pipeline;
+      folderPath?: string;
     }[] = [];
 
+    // Normalize parent path (ensure it starts with \ and doesn't end with \)
+    const normalizedParent = parentPath.startsWith("\\") ? parentPath : "\\" + parentPath;
+    const parentDepth = normalizedParent.split("\\").filter(p => p !== "").length;
+
     this.pipelines.forEach((pipeline) => {
-      const parts = pipeline.folder.split("\\");
-      if (parts[1] === folder) {
-        if (parts.length > 2) {
-          childFolders.add(parts.slice(1, 3).join("\\"));
+      // Normalize pipeline folder path
+      const pipelineFolder = pipeline.folder;
+      const parts = pipelineFolder.split("\\").filter(p => p !== "");
+      
+      // Check if this pipeline is under the parent path
+      const pipelinePath = "\\" + parts.slice(0, parentDepth).join("\\");
+      
+      if (pipelinePath === normalizedParent) {
+        if (parts.length > parentDepth) {
+          // This pipeline is in a subfolder - add the subfolder
+          const subfolderName = parts[parentDepth];
+          const subfolderPath = "\\" + parts.slice(0, parentDepth + 1).join("\\");
+          childFolders.add(subfolderPath);
         } else {
+          // This pipeline is directly in this folder
           childPipelines.push({
             label: pipeline.name,
             isFolder: false,
@@ -209,10 +227,14 @@ export class PipelineTreeDataProvider
     });
 
     const childFolderItems = Array.from(childFolders)
-      .map((folder) => ({
-        label: folder.split("\\")[1],
-        isFolder: true,
-      }))
+      .map((fullPath) => {
+        const parts = fullPath.split("\\").filter(p => p !== "");
+        return {
+          label: parts[parts.length - 1],
+          isFolder: true,
+          folderPath: fullPath,
+        };
+      })
       .sort((a, b) => a.label.localeCompare(b.label));
     const sortedChildPipelines = childPipelines.sort((a, b) =>
       a.label.localeCompare(b.label)
