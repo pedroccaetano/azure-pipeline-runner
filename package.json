@@ -40,6 +40,19 @@
   ],
   "main": "./out/extension.js",
   "contributes": {
+    "languages": [
+      {
+        "id": "azure-pipeline-logs",
+        "aliases": ["Azure Pipeline Logs"]
+      }
+    ],
+    "grammars": [
+      {
+        "language": "azure-pipeline-logs",
+        "scopeName": "source.azure-pipeline-logs",
+        "path": "./syntaxes/azure-pipeline-logs.tmLanguage.json"
+      }
+    ],
     "viewsContainers": {
       "activitybar": [
         {
@@ -370,6 +383,57 @@
           "maximum": 50,
           "description": "Number of builds to load per page (1-50 builds)"
         }
+      }
+    },
+    "configurationDefaults": {
+      "[azure-pipeline-logs]": {
+        "editor.fontFamily": "Cascadia Mono"
+      },
+      "editor.tokenColorCustomizations": {
+        "textMateRules": [
+          {
+            "scope": "source.azure-pipeline-logs",
+            "settings": {
+              "foreground": "#FFFFFF"
+            }
+          },
+          {
+            "scope": "azure-pipeline-logs.section",
+            "settings": {
+              "foreground": "#73e58c"
+            }
+          },
+          {
+            "scope": "azure-pipeline-logs.command",
+            "settings": {
+              "foreground": "#66bdff"
+            }
+          },
+          {
+            "scope": "azure-pipeline-logs.debug",
+            "settings": {
+              "foreground": "#ae99ff"
+            }
+          },
+          {
+            "scope": "azure-pipeline-logs.warning",
+            "settings": {
+              "foreground": "#a2651b"
+            }
+          },
+          {
+            "scope": "azure-pipeline-logs.error",
+            "settings": {
+              "foreground": "#d53333"
+            }
+          },
+          {
+            "scope": "azure-pipeline-logs.tag",
+            "settings": {
+              "foreground": "#000000"
+            }
+          }
+        ]
       }
     }
   },

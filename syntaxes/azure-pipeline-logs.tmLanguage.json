@@ -1,0 +1,62 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Azure Pipeline Logs",
+  "scopeName": "source.azure-pipeline-logs",
+  "patterns": [
+    {
+      "match": "^((##)?\\[section\\])(.*)$",
+      "captures": {
+        "1": {
+          "name": "azure-pipeline-logs.tag"
+        },
+        "3": {
+          "name": "azure-pipeline-logs.section"
+        }
+      }
+    },
+    {
+      "match": "^((##)?\\[command\\])(.*)$",
+      "captures": {
+        "1": {
+          "name": "azure-pipeline-logs.tag"
+        },
+        "3": {
+          "name": "azure-pipeline-logs.command"
+        }
+      }
+    },
+    {
+      "match": "^((##)?\\[debug\\])(.*)$",
+      "captures": {
+        "1": {
+          "name": "azure-pipeline-logs.tag"
+        },
+        "3": {
+          "name": "azure-pipeline-logs.debug"
+        }
+      }
+    },
+    {
+      "match": "^((##)?\\[warning\\])(.*)$",
+      "captures": {
+        "1": {
+          "name": "azure-pipeline-logs.tag"
+        },
+        "3": {
+          "name": "azure-pipeline-logs.warning"
+        }
+      }
+    },
+    {
+      "match": "^((##)?\\[error\\])(.*)$",
+      "captures": {
+        "1": {
+          "name": "azure-pipeline-logs.tag"
+        },
+        "3": {
+          "name": "azure-pipeline-logs.error"
+        }
+      }
+    }
+  ]
+}

@@ -69,8 +69,8 @@ export async function activate(context: vscode.ExtensionContext) {
     false
   );
 
-  // Create output channel for pipeline logs
-  const outputChannel = vscode.window.createOutputChannel("Azure Pipeline Logs");
+  // Create output channel for pipeline logs with syntax highlighting
+  const outputChannel = vscode.window.createOutputChannel("Azure Pipeline Logs", "azure-pipeline-logs");
   context.subscriptions.push(outputChannel);
 
   // Create status bar item for polling toggle
