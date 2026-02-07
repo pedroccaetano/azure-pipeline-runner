@@ -183,11 +183,7 @@
         "title": "Refresh Accounts",
         "icon": "$(refresh)"
       },
-      {
-        "command": "azurePipelinesRunner.toggleLogViewer",
-        "title": "Log Viewer Settings",
-        "icon": "$(gear)"
-      },
+
       {
         "command": "azurePipelinesRunner.togglePolling",
         "title": "Toggle Azure Pipelines Polling"
@@ -240,11 +236,7 @@
           "when": "view == azurePipelineStages",
           "group": "navigation@0"
         },
-        {
-          "command": "azurePipelinesRunner.toggleLogViewer",
-          "when": "view == azurePipelineStages",
-          "group": "navigation@2"
-        },
+
         {
           "command": "azurePipelinesRunner.runPipelineFromBranch",
           "when": "view == azurePipelineBuilds",
@@ -351,19 +343,6 @@
       "type": "object",
       "title": "Azure Pipelines Runner",
       "properties": {
-        "azurePipelinesRunner.logViewer": {
-          "type": "string",
-          "enum": [
-            "outputChannel",
-            "file"
-          ],
-          "enumDescriptions": [
-            "Open logs in the Output Channel panel",
-            "Save logs to a temporary file and open in editor"
-          ],
-          "default": "outputChannel",
-          "description": "Choose how to view stage logs"
-        },
         "azurePipelinesRunner.enablePolling": {
           "type": "boolean",
           "default": true,
