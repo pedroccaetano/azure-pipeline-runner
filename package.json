@@ -411,6 +411,12 @@
             "settings": {
               "foreground": "#000000"
             }
+          },
+          {
+            "scope": "azure-pipeline-logs.group",
+            "settings": {
+              "foreground": "#00ffd0"
+            }
           }
         ]
       }

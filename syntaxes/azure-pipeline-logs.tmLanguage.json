@@ -57,6 +57,25 @@
           "name": "azure-pipeline-logs.error"
         }
       }
+    },
+    {
+      "match": "^(##\\[group\\])(.*)$",
+      "captures": {
+        "1": {
+          "name": "azure-pipeline-logs.group"
+        },
+        "2": {
+          "name": "azure-pipeline-logs.group"
+        }
+      }
+    },
+    {
+      "match": "^(##\\[endgroup\\])$",
+      "captures": {
+        "1": {
+          "name": "azure-pipeline-logs.group"
+        }
+      }
     }
   ]
 }
