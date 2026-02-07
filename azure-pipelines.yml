@@ -61,5 +61,6 @@ stages:
         echo "##[debug]Debug text"
         echo "##[command]Command-line being run"
         echo "##[endgroup]"
+      displayName: 'Test syntax highlighting'
     - bash: exit 1
-      displayName: 'Test syntax highlight and test failure'
+      displayName: 'Force failure'
