@@ -115,6 +115,16 @@
         "icon": "$(link-external)"
       },
       {
+        "command": "azurePipelinesRunner.openJob",
+        "title": "Open Job",
+        "icon": "$(link-external)"
+      },
+      {
+        "command": "azurePipelinesRunner.openTask",
+        "title": "Open Task",
+        "icon": "$(link-external)"
+      },
+      {
         "command": "azurePipelinesRunner.retryStage",
         "title": "Retry Stage",
         "icon": "$(redo)"
@@ -318,6 +328,16 @@
           "command": "azurePipelinesRunner.openStage",
           "when": "viewItem == stage || viewItem == stage-stopped",
           "group": "inline@2"
+        },
+        {
+          "command": "azurePipelinesRunner.openJob",
+          "when": "viewItem == phase",
+          "group": "inline@1"
+        },
+        {
+          "command": "azurePipelinesRunner.openTask",
+          "when": "viewItem == task",
+          "group": "inline@1"
         }
       ]
     },

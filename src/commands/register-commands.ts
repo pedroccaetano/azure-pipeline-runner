@@ -421,6 +421,41 @@ export function registerCommands(
 
 	context.subscriptions.push(
 		vscode.commands.registerCommand(
+			"azurePipelinesRunner.openJob",
+			async ({ timelineRecord }: { timelineRecord: TimelineRecord }) => {
+				const { organization } = await getConfiguration();
+
+				// Find the Job child of this Phase to get the correct job ID for the URL
+				const allRecords = stageTreeDataProvider.getAllRecords();
+				const jobChild = allRecords.find(
+					(r) => r.type === "Job" && r.parentId === timelineRecord.id,
+				);
+
+				// Use the Job ID if found, otherwise fall back to the Phase ID
+				const jobId = jobChild?.id ?? timelineRecord.id;
+				const url = `https://dev.azure.com/${organization}/${timelineRecord.projectName}/_build/results?buildId=${timelineRecord.buildId}&view=logs&j=${jobId}`;
+
+				openExternalLink(url);
+			},
+		),
+	);
+
+	context.subscriptions.push(
+		vscode.commands.registerCommand(
+			"azurePipelinesRunner.openTask",
+			async ({ timelineRecord }: { timelineRecord: TimelineRecord }) => {
+				const { organization } = await getConfiguration();
+
+				// For tasks, use j= for the parent job and t= for the task
+				const url = `https://dev.azure.com/${organization}/${timelineRecord.projectName}/_build/results?buildId=${timelineRecord.buildId}&view=logs&j=${timelineRecord.parentId}&t=${timelineRecord.id}`;
+
+				openExternalLink(url);
+			},
+		),
+	);
+
+	context.subscriptions.push(
+		vscode.commands.registerCommand(
 			"azurePipelinesRunner.openStageLog",
 			async ({ timelineRecord }: { timelineRecord: TimelineRecord }) => {
 				try {
