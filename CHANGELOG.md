@@ -2,6 +2,18 @@
 
 All notable changes to the "Azure Pipelines Runner" extension will be documented in this file.
 
+## [0.3.0] 
+
+- Syntax highlighting for Azure Pipeline logs [#25](https://github.com/pedroccaetano/azure-pipeline-runner/pull/25) by @JtMotoX
+  - Introduced a TextMate grammar (`syntaxes/azure-pipeline-logs.tmLanguage.json`) to visually distinguish log elements:
+    - `[section]` = green
+    - `[command]` = blue
+    - `[debug]` = purple
+    - `[warning]` = orange
+    - `[error]` = red
+    - `##[group]` / `##[endgroup]` = teal
+  - Simplified logging UX: removed the file-based log viewer option; logs now display directly in the Output Channel for consistency and ease of use.
+
 ## [0.2.0]
 
 - Major feature enhancements [#23](https://github.com/pedroccaetano/azure-pipeline-runner/pull/23) by @JtMotoX

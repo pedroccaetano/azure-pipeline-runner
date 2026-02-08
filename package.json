@@ -8,7 +8,7 @@
   },
   "publisher": "PedroCaetano",
   "icon": "resources/icon.png",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "license": "MIT",
   "homepage": "https://github.com/pedroccaetano/azure-pipeline-runner#readme",
   "repository": {
@@ -43,7 +43,9 @@
     "languages": [
       {
         "id": "azure-pipeline-logs",
-        "aliases": ["Azure Pipeline Logs"]
+        "aliases": [
+          "Azure Pipeline Logs"
+        ]
       }
     ],
     "grammars": [
@@ -193,7 +195,6 @@
         "title": "Refresh Accounts",
         "icon": "$(refresh)"
       },
-
       {
         "command": "azurePipelinesRunner.togglePolling",
         "title": "Toggle Azure Pipelines Polling"
@@ -246,7 +247,6 @@
           "when": "view == azurePipelineStages",
           "group": "navigation@0"
         },
-
         {
           "command": "azurePipelinesRunner.runPipelineFromBranch",
           "when": "view == azurePipelineBuilds",
