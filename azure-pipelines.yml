@@ -53,5 +53,14 @@ stages:
   - job: Job2
     displayName: 'Job 2'
     steps:
+    - bash: |
+        echo "##[group]Beginning of a group"
+        echo "##[warning]Warning message"
+        echo "##[error]Error message"
+        echo "##[section]Start of a section"
+        echo "##[debug]Debug text"
+        echo "##[command]Command-line being run"
+        echo "##[endgroup]"
+      displayName: 'Test syntax highlighting'
     - bash: exit 1
       displayName: 'Force failure'
