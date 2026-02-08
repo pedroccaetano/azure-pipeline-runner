@@ -6,13 +6,22 @@
     {
       "match": "^((##)?\\[section\\])(.*)$",
       "captures": {
-        "1": {
-          "name": "azure-pipeline-logs.tag"
-        },
-        "3": {
-          "name": "azure-pipeline-logs.section"
-        }
+        "1": { "name": "azure-pipeline-logs.tag" },
+        "3": { "name": "azure-pipeline-logs.section" }
       }
+    },
+
+    {
+      "match": "^Starting:.*$",
+      "name": "azure-pipeline-logs.section"
+    },
+    {
+      "match": "^Finishing:.*$",
+      "name": "azure-pipeline-logs.section"
+    },
+    {
+      "match": "^Success!.*$",
+      "name": "azure-pipeline-logs.section"
     },
     {
       "match": "^((##)?\\[command\\])(.*)$",
@@ -47,6 +56,7 @@
         }
       }
     },
+    { "match": "^⚠\\s.*$", "name": "azure-pipeline-logs.warning" },
     {
       "match": "^((##)?\\[error\\])(.*)$",
       "captures": {
@@ -58,6 +68,7 @@
         }
       }
     },
+    { "match": "^✖\\s.*$", "name": "azure-pipeline-logs.error" },
     {
       "match": "^(##\\[group\\])(.*)$",
       "captures": {
@@ -68,6 +79,18 @@
           "name": "azure-pipeline-logs.group"
         }
       }
+    },
+    {
+      "match": "^(?:git|npm|pnpm|yarn|node|npx|python|pip|pip3|dotnet|az|aws|gcloud|kubectl|helm|docker|podman|make|curl|wget|ssh|scp|tar|zip|unzip|sed|awk|grep|go|java|javac|mvn|gradle|bundle|rails|composer|php|ruby|perl|powershell|pwsh|bash|sh|zsh)\\b.*$",
+      "name": "azure-pipeline-logs.command"
+    },
+    {
+      "match": "^(?:/usr/bin/|/bin/|/usr/local/bin/|/usr/sbin/|/sbin/)[^\\s]+.*$",
+      "name": "azure-pipeline-logs.command"
+    },
+    {
+      "match": "^~\\s.*$",
+      "name": "azure-pipeline-logs.warning"
     },
     {
       "match": "^(##\\[endgroup\\])$",
