@@ -1,5 +1,11 @@
 # Azure Pipelines Runner
 
+[![VS Marketplace Version](https://img.shields.io/visual-studio-marketplace/v/PedroCaetano.azure-pipeline-runner?label=marketplace&color=blue)](https://marketplace.visualstudio.com/items?itemName=PedroCaetano.azure-pipeline-runner)
+[![Installs](https://img.shields.io/visual-studio-marketplace/i/PedroCaetano.azure-pipeline-runner)](https://marketplace.visualstudio.com/items?itemName=PedroCaetano.azure-pipeline-runner)
+[![Downloads](https://img.shields.io/visual-studio-marketplace/d/PedroCaetano.azure-pipeline-runner)](https://marketplace.visualstudio.com/items?itemName=PedroCaetano.azure-pipeline-runner)
+[![Rating](https://img.shields.io/visual-studio-marketplace/r/PedroCaetano.azure-pipeline-runner)](https://marketplace.visualstudio.com/items?itemName=PedroCaetano.azure-pipeline-runner)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+
 Your Azure DevOps pipelines, right where you code.
 
 Monitor builds, stages, jobs, and task logs directly from the VS Code sidebar. No more context-switching just to check if your pipeline passed.
@@ -17,6 +23,19 @@ Monitor builds, stages, jobs, and task logs directly from the VS Code sidebar. N
 - **Build retention** — Mark builds to prevent automatic deletion
 - **Multiple accounts** — Connect to multiple Azure DevOps organizations simultaneously
 - **Secure credential storage** — PATs are stored using VS Code's built-in Secret Storage
+
+---
+
+## Screenshots
+
+### Pipelines
+![Pipelines view](resources/walkthrough/pipelines.png)
+
+### Builds
+![Builds view](resources/walkthrough/builds.png)
+
+### Stages, Jobs & Tasks
+![Stages view](resources/walkthrough/stages.png)
 
 ---
 
