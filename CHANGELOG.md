@@ -2,6 +2,11 @@
 
 All notable changes to the "Azure Pipelines Runner" extension will be documented in this file.
 
+## [0.3.2]
+
+- **README enhancements** — Added marketplace badges (version, installs, downloads, rating, license) and screenshots for the Pipelines, Builds, and Stages views
+- Updated extension categories to include "Visualization" and added keywords for better Marketplace discoverability
+
 ## [0.3.1]
 
 - **Getting Started walkthrough** — Replaced the welcome message dialog with a VS Code native walkthrough that guides new users through connecting an account, exploring pipelines, monitoring builds, running pipelines, and inspecting stages/jobs/tasks
