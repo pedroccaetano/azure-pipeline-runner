@@ -9,6 +9,8 @@ import type { Build } from "../types/builds";
 import type { TimelineRecord } from "../types/stages";
 import type { Pipeline, Project, TemplateParameters } from "../types/types";
 import { collectParameterValues } from "../utils/parameter-prompt";
+import { openWalkthrough } from "../welcome";
+import { checkAndPromptReview, recordBuildTriggered } from "../services/review-service";
 import {
 	cancelBuild,
 	deleteBuild,
@@ -555,10 +557,7 @@ export function registerCommands(
 
 	context.subscriptions.push(
 		vscode.commands.registerCommand("azurePipelinesRunner.showWelcome", () => {
-			vscode.commands.executeCommand(
-				"workbench.action.openSettings",
-				"azurePipelinesRunner",
-			);
+			openWalkthrough();
 		}),
 	);
 
@@ -835,6 +834,8 @@ export function registerCommands(
 						);
 						// Refresh builds list
 						await buildTreeDataProvider.refreshBuilds(true);
+											// Review prompt — fire and forget after success
+						recordBuildTriggered(context).then(() => checkAndPromptReview(context));
 					}
 				} catch (error) {
 					let errorMessage = "Unknown error";
@@ -1326,6 +1327,8 @@ export function registerCommands(
 								await new Promise((resolve) => setTimeout(resolve, retryDelay));
 							}
 						}
+						// Review prompt — fire and forget after success
+						recordBuildTriggered(context).then(() => checkAndPromptReview(context));
 					}
 				} catch (error) {
 					let errorMessage = "Unknown error";

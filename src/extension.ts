@@ -4,8 +4,9 @@ import { BuildTreeDataProvider } from "./providers/build/build-tree-data-provide
 import { StageTreeDataProvider } from "./providers/stage/stage-tree-data-provider";
 import { AccountTreeDataProvider } from "./providers/account/account-tree-data-provider";
 import { AccountManager } from "./services/account-manager";
-import { showWelcome } from "./welcome";
+import { openWalkthrough } from "./welcome";
 import { registerCommands } from "./commands/register-commands";
+import { recordFirstActivation, checkAndPromptReview } from "./services/review-service";
 
 export async function activate(context: vscode.ExtensionContext) {
   // Initialize account manager (singleton)
@@ -111,8 +112,11 @@ export async function activate(context: vscode.ExtensionContext) {
   const accounts = await accountManager.getAccounts();
 
   if (accounts.length === 0) {
-    showWelcome();
+    openWalkthrough();
   }
+
+  await recordFirstActivation(context);
+  checkAndPromptReview(context); // fire and forget — does not block activation
 
   // Listen for account changes to refresh views
   accountManager.onDidChangeAccounts(async () => {

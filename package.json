@@ -8,7 +8,7 @@
   },
   "publisher": "PedroCaetano",
   "icon": "resources/icon.png",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "license": "MIT",
   "homepage": "https://github.com/pedroccaetano/azure-pipeline-runner#readme",
   "repository": {
@@ -344,7 +344,7 @@
     "viewsWelcome": [
       {
         "view": "azurePipelineAccounts",
-        "contents": "No Azure DevOps accounts connected yet.\n\nConnect your Azure DevOps organization to browse pipelines, builds, and stages directly from VS Code.\n\nGet started:\n\n[Add your first account](command:azurePipelinesRunner.addAccount)\n\n---\n\nRequired PAT scopes:\n\n• Build — Read & Execute\n• Code — Read\n• Release — Read, Write, Execute & Manage\n\n[Learn more](https://github.com/pedroccaetano/azure-pipeline-runner)\n"
+        "contents": "No Azure DevOps accounts connected yet.\n\nConnect your Azure DevOps organization to browse pipelines, builds, and stages directly from VS Code.\n\nGet started:\n\n[Add your first account](command:azurePipelinesRunner.addAccount)\n\n---\n\nRequired PAT scopes:\n\n\u2022 Build \u2014 Read & Execute\n\u2022 Code \u2014 Read\n\u2022 Release \u2014 Read, Write, Execute & Manage\n\n[Learn more](https://github.com/pedroccaetano/azure-pipeline-runner)\n"
       },
       {
         "view": "azurePipelineView",
@@ -357,6 +357,75 @@
       {
         "view": "azurePipelineStages",
         "contents": "No stages to display.\n\nSelect a build from the Builds view above to view its stages."
+      }
+    ],
+    "walkthroughs": [
+      {
+        "id": "azurePipelinesRunner.gettingStarted",
+        "title": "Get Started with Azure Pipelines Runner",
+        "description": "Monitor and manage Azure DevOps pipelines directly in VS Code \u2014 without leaving the editor.",
+        "steps": [
+          {
+            "id": "addAccount",
+            "title": "Connect Your Azure DevOps Account",
+            "description": "Add your Azure DevOps organization and a Personal Access Token (PAT) to get started.\n\nRequired PAT scopes: **Build** (Read & Execute), **Code** (Read), **Release** (Read, Write, Execute & Manage).\n\n[Add Account](command:azurePipelinesRunner.addAccount)",
+            "media": {
+              "svg": "resources/walkthrough/account.svg",
+              "altText": "Add an Azure DevOps account"
+            },
+            "completionEvents": [
+              "onCommand:azurePipelinesRunner.addAccount"
+            ]
+          },
+          {
+            "id": "explorePipelines",
+            "title": "Browse Your Pipelines",
+            "description": "Once connected, the **Pipelines** view lists all pipelines across your Azure DevOps projects.\n\nClick any pipeline to load its build history. Use the filter icon to narrow by project.\n\n[Refresh Pipelines](command:azurePipelinesRunner.refreshEntry)",
+            "media": {
+              "image": "resources/walkthrough/pipelines.png",
+              "altText": "Azure Pipelines"
+            },
+            "completionEvents": [
+              "onView:azurePipelineView"
+            ]
+          },
+          {
+            "id": "viewBuilds",
+            "title": "Monitor Build History",
+            "description": "Select a pipeline to see recent builds in the **Builds** view.\n\nBuilds update automatically via polling (every 5 seconds by default). Running builds show a progress indicator and can be cancelled inline.\n\n[Refresh Builds](command:azurePipelinesRunner.refreshBuilds)",
+            "media": {
+              "image": "resources/walkthrough/builds.png",
+              "altText": "Build history"
+            },
+            "completionEvents": [
+              "onView:azurePipelineBuilds"
+            ]
+          },
+          {
+            "id": "runPipeline",
+            "title": "Run a Pipeline from VS Code",
+            "description": "Trigger a pipeline run on any branch without opening a browser.\n\nClick the play button \u25b6 in the Builds view toolbar, choose a branch, and confirm any pipeline parameters.\n\n[Run Pipeline from Branch](command:azurePipelinesRunner.runPipelineFromBranch)",
+            "media": {
+              "svg": "resources/walkthrough/run.svg",
+              "altText": "Run a pipeline"
+            },
+            "completionEvents": [
+              "onCommand:azurePipelinesRunner.runPipelineFromBranch"
+            ]
+          },
+          {
+            "id": "inspectStages",
+            "title": "Inspect Stages, Jobs & Tasks",
+            "description": "Click a build to drill into its **Stages \u2192 Jobs \u2192 Tasks** tree.\n\nFailed stages can be retried inline. Pending approvals are surfaced with a single click. Task logs open in the editor with syntax highlighting.\n\n[Refresh Stages](command:azurePipelinesRunner.refreshStages)",
+            "media": {
+              "image": "resources/walkthrough/stages.png",
+              "altText": "Stages tree"
+            },
+            "completionEvents": [
+              "onView:azurePipelineStages"
+            ]
+          }
+        ]
       }
     ],
     "configuration": {

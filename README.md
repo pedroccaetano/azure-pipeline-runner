@@ -1,102 +1,75 @@
 # Azure Pipelines Runner
 
-Azure Pipelines Runner lets you explore and monitor your Azure DevOps pipelines directly from the editor.
+Your Azure DevOps pipelines, right where you code.
 
-It helps you keep track of builds, inspect logs, and understand pipeline status without constantly switching between VS Code and the Azure DevOps web portal.
-
-![Azure Pipelines Runner Demo](./resources/demo.gif)
+Monitor builds, stages, jobs, and task logs directly from the VS Code sidebar. No more context-switching just to check if your pipeline passed.
 
 ---
 
-## Get started
+## Features
 
-To start using Azure Pipelines Runner, simply add your Azure DevOps account through the Accounts view.
-
-You'll need:
-- Your Azure DevOps organization name
-- A Personal Access Token (PAT)
-
-Once added, the extension will automatically load your projects, pipelines, and builds into the VS Code Explorer.
-
----
-
-## Manage multiple accounts
-
-Azure Pipelines Runner supports multiple Azure DevOps accounts:
-
-- Add accounts through the Accounts view in the Explorer
-- Switch between accounts to view different organizations
-- Credentials are stored securely using VS Code's Secret Storage
-- Legacy credentials from `settings.json` are automatically migrated to secure storage
+- **Live build monitoring** — Real-time build status with configurable auto-polling
+- **Full pipeline hierarchy** — Navigate from project → pipeline → build → stage → job → task
+- **Log viewer** — Inspect task logs with syntax highlighting directly in the editor
+- **Run & cancel builds** — Trigger new runs or cancel in-progress builds from the sidebar
+- **Stage approvals** — Approve or reject pending stage gates without opening the browser
+- **Retry failed stages** — Re-run a failed stage with a single click
+- **Build retention** — Mark builds to prevent automatic deletion
+- **Multiple accounts** — Connect to multiple Azure DevOps organizations simultaneously
+- **Secure credential storage** — PATs are stored using VS Code's built-in Secret Storage
 
 ---
 
-## Explore your pipelines
+## Getting Started
 
-Use the Azure Pipelines Runner view to navigate through:
-
-- Azure DevOps projects
-- Pipelines within each project
-- Builds associated with each pipeline
-
-You can quickly inspect build status, stages, and execution logs, or open the selected pipeline or build in the Azure DevOps web UI when needed.
-
----
-
-## Inspect build details
-
-Selecting a build allows you to:
-
-- View the current build status
-- Inspect pipeline stages
-- Open execution logs
-- Jump directly to the build page in Azure DevOps
-
-This makes it easier to investigate failures or understand what happened during a pipeline run without leaving your development environment.
+1. Install the extension from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=PedroCaetano.azure-pipeline-runner)
+2. Open the **Azure Pipelines Runner** panel in the Explorer sidebar
+3. Click **Add Account** and enter your Azure DevOps organization name and a [Personal Access Token (PAT)](https://learn.microsoft.com/en-us/azure/devops/organizations/accounts/use-personal-access-tokens-to-authenticate)
+4. Your projects, pipelines, and builds will load automatically
 
 ---
 
 ## Requirements
 
-To use this extension, you will need:
+- An **Azure DevOps Services** (cloud) account
+- A Personal Access Token (PAT) with the following scopes:
+  - **Build**: Read & Execute
+  - **Code**: Read
+  - **Release**: Read, Write, Execute & Manage
 
-- An Azure DevOps Services (cloud) account
-- A Personal Access Token (PAT) with the following permissions:
-  - Build: Read & Execute
-  - Code: Read
-  - Release: Read, Write, Execute & Manage
-
-> **Note:** Azure DevOps Server (on-premises) is not supported at this time.
+> **Note:** Azure DevOps Server (on-premises) is not supported.
 
 ---
 
-## Extension settings
+## Extension Settings
 
-No manual configuration in `settings.json` is required. Accounts are managed through the Accounts view in the Explorer.
+| Setting | Default | Description |
+|---|---|---|
+| `azurePipelinesRunner.enablePolling` | `true` | Automatically refresh build status |
+| `azurePipelinesRunner.pollingIntervalSeconds` | `5` | Polling interval in seconds (1–60) |
+| `azurePipelinesRunner.buildsPerPage` | `5` | Number of builds to show per pipeline (1–50) |
 
-**Note:** If you previously configured credentials in `settings.json`, they will be automatically migrated to secure storage when the extension activates.
+No manual configuration required — accounts are managed through the Accounts view.
+
+> **Migration note:** If you previously stored credentials in `settings.json`, they will be automatically migrated to secure storage on first activation.
 
 ---
 
 ## Contributing
 
-There are a couple of ways you can contribute to this repo:
+Found a bug or have an idea? All contributions are welcome.
 
-- **Ideas, feature requests and bugs**: We are open to all ideas and we want to get rid of bugs! Use the [Issues](https://github.com/pedroccaetano/azure-pipeline-runner/issues) section to report a new issue, provide your ideas or contribute to existing threads.
-- **Documentation**: Found a typo or strangely worded sentences? Submit a PR!
-- **Code**: Contribute bug fixes, features or design changes:
-  - Clone the repository locally and open in VS Code
-  - Install dependencies with `npm install`
-  - Press `F5` to start debugging the extension
+- **Bug reports & feature requests** — [Open an issue on GitHub](https://github.com/pedroccaetano/azure-pipeline-runner/issues)
+- **Pull requests** — Clone the repo, run `npm install`, and press `F5` in VS Code to launch the Extension Development Host
 
 ---
 
 ## Roadmap
 
-Track progress and upcoming features on the [GitHub Project Board](https://github.com/users/pedroccaetano/projects/2).
+Track upcoming features and progress on the [GitHub Project Board](https://github.com/users/pedroccaetano/projects/2).
 
 ---
 
 ## Changelog
 
-For a detailed list of changes and release notes, please see the [CHANGELOG.md](CHANGELOG.md).
+See [CHANGELOG.md](CHANGELOG.md) for the full release history.

@@ -2,7 +2,13 @@
 
 All notable changes to the "Azure Pipelines Runner" extension will be documented in this file.
 
-## [0.3.0] 
+## [0.3.1]
+
+- **Getting Started walkthrough** — Replaced the welcome message dialog with a VS Code native walkthrough that guides new users through connecting an account, exploring pipelines, monitoring builds, running pipelines, and inspecting stages/jobs/tasks
+- **Marketplace review prompt** — After 3+ days of use and 3+ builds triggered, the extension prompts users to leave a review on the VS Code Marketplace (with "Maybe Later" and "Don't Ask Again" options)
+- **README refresh** — Rewrote the README for clarity and brevity, with a feature table, updated settings reference, and simplified contributing/getting started sections
+
+## [0.3.0]
 
 - Syntax highlighting for Azure Pipeline logs [#25](https://github.com/pedroccaetano/azure-pipeline-runner/pull/25) by @JtMotoX
   - Introduced a TextMate grammar (`syntaxes/azure-pipeline-logs.tmLanguage.json`) to visually distinguish log elements:

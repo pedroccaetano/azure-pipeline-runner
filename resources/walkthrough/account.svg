@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 160" width="200" height="160">
+  <!-- Background -->
+  <rect width="200" height="160" fill="none"/>
+  <!-- User avatar circle -->
+  <circle cx="90" cy="72" r="42" fill="#2560E0" opacity="0.15"/>
+  <circle cx="90" cy="72" r="36" fill="#2560E0" opacity="0.3"/>
+  <!-- Head -->
+  <circle cx="90" cy="62" r="16" fill="#2560E0"/>
+  <!-- Body arc -->
+  <path d="M58 104 Q58 84 90 84 Q122 84 122 104" fill="#2560E0"/>
+  <!-- Lock icon (right side) -->
+  <rect x="126" y="82" width="32" height="26" rx="4" fill="#91B0F2"/>
+  <!-- Lock shackle -->
+  <path d="M133 82 L133 74 Q142 66 151 74 L151 82" fill="none" stroke="#91B0F2" stroke-width="5" stroke-linecap="round"/>
+  <!-- Lock keyhole -->
+  <circle cx="142" cy="93" r="4" fill="#2560E0"/>
+  <rect x="140" y="93" width="4" height="7" rx="1" fill="#2560E0"/>
+</svg>
