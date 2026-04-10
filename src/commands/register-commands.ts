@@ -80,9 +80,21 @@ export function registerCommands(
 			"azurePipelinesRunner.addAccount",
 			async () => {
 				try {
+					const authMethod = await vscode.window.showQuickPick(
+						[
+							{ label: "$(account) Sign in with Microsoft", value: "oauth", description: "Recommended — uses your Microsoft account" },
+							{ label: "$(key) Personal Access Token (PAT)", value: "pat", description: "Use a PAT from Azure DevOps" },
+						],
+						{ placeHolder: "How would you like to connect?" }
+					);
+
+					if (!authMethod) {
+						return;
+					}
+
 					const organization = await vscode.window.showInputBox({
 						prompt: "Enter your Azure DevOps organization name",
-						placeHolder: "Organization name",
+						placeHolder: "e.g., my-company",
 						validateInput: (value) => {
 							if (!value || value.trim() === "") {
 								return "Organization name is required";
@@ -95,41 +107,59 @@ export function registerCommands(
 						return;
 					}
 
-					const pat = await vscode.window.showInputBox({
-						prompt: "Enter your Personal Access Token (PAT)",
-						placeHolder: "PAT",
-						password: true,
-						validateInput: (value) => {
-							if (!value || value.trim() === "") {
-								return "PAT is required";
-							}
-							return null;
-						},
-					});
-
-					if (!pat) {
-						return;
-					}
-
 					const note = await vscode.window.showInputBox({
-						prompt: "Enter a note to identify this account (optional)",
-						placeHolder: "e.g., Work PAT, Personal, Prod Access",
+						prompt: "Add a label to identify this account (optional)",
+						placeHolder: "e.g., Work, Personal, Prod",
 					});
 
-					const newAccount = await vscode.window.withProgress(
-						{
-							location: vscode.ProgressLocation.Notification,
-							title: "Validating credentials...",
-							cancellable: false,
-						},
-						async () => {
-							return await accountManager.addAccount(
-								organization.trim(),
-								pat.trim(),
-								note?.trim() || "",
-							);
-						},
-					);
+					let newAccount;
+
+					if (authMethod.value === "oauth") {
+						newAccount = await vscode.window.withProgress(
+							{
+								location: vscode.ProgressLocation.Notification,
+								title: "Signing in with Microsoft...",
+								cancellable: false,
+							},
+							async () => {
+								return await accountManager.addOAuthAccount(
+									organization.trim(),
+									note?.trim() || "",
+								);
+							},
+						);
+					} else {
+						const pat = await vscode.window.showInputBox({
+							prompt: "Enter your Personal Access Token (PAT)",
+							placeHolder: "PAT",
+							password: true,
+							validateInput: (value) => {
+								if (!value || value.trim() === "") {
+									return "PAT is required";
+								}
+								return null;
+							},
+						});
+
+						if (!pat) {
+							return;
+						}
+
+						newAccount = await vscode.window.withProgress(
+							{
+								location: vscode.ProgressLocation.Notification,
+								title: "Validating credentials...",
+								cancellable: false,
+							},
+							async () => {
+								return await accountManager.addAccount(
+									organization.trim(),
+									pat.trim(),
+									note?.trim() || "",
+								);
+							},
+						);
+					}
 
 					// Automatically switch to the newly added account
 					await accountManager.setActiveAccount(newAccount.id);
@@ -138,9 +168,9 @@ export function registerCommands(
 						`Account added and switched to ${organization}`,
 					);
 
-					// Refresh all views
+					// Refresh all views, loading the filter saved for the new account
 					accountTreeDataProvider.refresh();
-					pipelineTreeDataProvider.refresh();
+					pipelineTreeDataProvider.loadFilterForAccount(newAccount.id);
 
 					// Expand and focus Pipelines view
 					if (pipelinesTreeView) {
@@ -163,6 +193,64 @@ export function registerCommands(
 
 	context.subscriptions.push(
 		vscode.commands.registerCommand(
+			"azurePipelinesRunner.addOAuthAccount",
+			async () => {
+				try {
+					const organization = await vscode.window.showInputBox({
+						prompt: "Enter your Azure DevOps organization name",
+						placeHolder: "Organization name",
+						validateInput: (value) => {
+							if (!value || value.trim() === "") {
+								return "Organization name is required";
+							}
+							return null;
+						},
+					});
+
+					if (!organization) {
+						return;
+					}
+
+					const note = await vscode.window.showInputBox({
+						prompt: "Enter a note to identify this account (optional)",
+						placeHolder: "e.g., Work, Personal, Prod",
+					});
+
+					const newAccount = await vscode.window.withProgress(
+						{
+							location: vscode.ProgressLocation.Notification,
+							title: "Signing in with Microsoft...",
+							cancellable: false,
+						},
+						async () => {
+							return await accountManager.addOAuthAccount(
+								organization.trim(),
+								note?.trim() || "",
+							);
+						},
+					);
+
+					await accountManager.setActiveAccount(newAccount.id);
+
+					vscode.window.showInformationMessage(
+						`Signed in and switched to ${organization}`,
+					);
+
+					accountTreeDataProvider.refresh();
+					pipelineTreeDataProvider.loadFilterForAccount(newAccount.id);
+					buildTreeDataProvider.refresh();
+					stageTreeDataProvider.refresh();
+				} catch (error) {
+					const message =
+						error instanceof Error ? error.message : "Unknown error";
+					vscode.window.showErrorMessage(`Failed to sign in: ${message}`);
+				}
+			},
+		),
+	);
+
+	context.subscriptions.push(
+		vscode.commands.registerCommand(
 			"azurePipelinesRunner.switchAccount",
 			async (account: AccountData) => {
 				try {
@@ -171,9 +259,9 @@ export function registerCommands(
 						`Switched to ${account.organization} (${account.username})`,
 					);
 
-					// Refresh all views
+					// Refresh all views, loading the filter saved for the new account
 					accountTreeDataProvider.refresh();
-					pipelineTreeDataProvider.refresh();
+					pipelineTreeDataProvider.loadFilterForAccount(account.id);
 					buildTreeDataProvider.refresh();
 					stageTreeDataProvider.refresh();
 				} catch (error) {
@@ -236,9 +324,14 @@ export function registerCommands(
 					await accountManager.deleteAccount(account.id);
 					vscode.window.showInformationMessage("Account deleted");
 
-					// Refresh all views
+					// Refresh all views, loading the filter for the new active account
 					accountTreeDataProvider.refresh();
-					pipelineTreeDataProvider.refresh();
+					const newActive = await accountManager.getActiveAccount();
+					if (newActive) {
+						pipelineTreeDataProvider.loadFilterForAccount(newActive.id);
+					} else {
+						pipelineTreeDataProvider.refresh();
+					}
 					buildTreeDataProvider.refresh();
 					stageTreeDataProvider.refresh();
 				} catch (error) {
@@ -568,8 +661,7 @@ export function registerCommands(
 			async ({ timelineRecord }: { timelineRecord: TimelineRecord }) => {
 				try {
 					// Get current account
-					const accounts = await accountManager.getAccounts();
-					const activeAccount = accounts.find((a) => a.isActive);
+					const activeAccount = await accountManager.getActiveAccount();
 
 					if (!activeAccount) {
 						vscode.window.showErrorMessage(
@@ -577,6 +669,9 @@ export function registerCommands(
 						);
 						return;
 					}
+
+					const { token: approvalToken, tokenType: approvalTokenType } =
+						await accountManager.getActiveAccountToken();
 
 					// Get project and build context from the stage tree data provider
 					const project = stageTreeDataProvider.getCurrentProject();
@@ -605,7 +700,8 @@ export function registerCommands(
 								project.name,
 								build.id,
 								timelineRecord.id,
-								activeAccount.pat,
+								approvalToken,
+								approvalTokenType,
 							);
 						},
 					);
@@ -672,7 +768,8 @@ export function registerCommands(
 									project.name,
 									approvalId,
 									comment,
-									activeAccount.pat,
+									approvalToken,
+									approvalTokenType,
 								);
 							} else {
 								await rejectStage(
@@ -680,7 +777,8 @@ export function registerCommands(
 									project.name,
 									approvalId,
 									comment,
-									activeAccount.pat,
+									approvalToken,
+									approvalTokenType,
 								);
 							}
 						},

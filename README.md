@@ -22,7 +22,8 @@ Monitor builds, stages, jobs, and task logs directly from the VS Code sidebar. N
 - **Retry failed stages** — Re-run a failed stage with a single click
 - **Build retention** — Mark builds to prevent automatic deletion
 - **Multiple accounts** — Connect to multiple Azure DevOps organizations simultaneously
-- **Secure credential storage** — PATs are stored using VS Code's built-in Secret Storage
+- **Microsoft sign-in** — Authenticate with your Microsoft account (recommended) or a Personal Access Token
+- **Secure credential storage** — Credentials are stored using VS Code's built-in Secret Storage
 
 ---
 
@@ -42,19 +43,23 @@ Monitor builds, stages, jobs, and task logs directly from the VS Code sidebar. N
 ## Getting Started
 
 1. Install the extension from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=PedroCaetano.azure-pipeline-runner)
-2. Open the **Azure Pipelines Runner** panel in the Explorer sidebar
-3. Click **Add Account** and enter your Azure DevOps organization name and a [Personal Access Token (PAT)](https://learn.microsoft.com/en-us/azure/devops/organizations/accounts/use-personal-access-tokens-to-authenticate)
+2. Open the **Azure Pipelines Runner** panel in the sidebar
+3. Click **Add Account** and choose how to connect:
+   - **Sign in with Microsoft** *(recommended)* — uses your Microsoft account via VS Code's built-in auth provider; no PAT needed
+   - **Personal Access Token (PAT)** — enter your organization name and a [PAT](https://learn.microsoft.com/en-us/azure/devops/organizations/accounts/use-personal-access-tokens-to-authenticate) manually
 4. Your projects, pipelines, and builds will load automatically
+5. You can add multiple accounts and switch between them at any time from the Accounts view
 
 ---
 
 ## Requirements
 
 - An **Azure DevOps Services** (cloud) account
-- A Personal Access Token (PAT) with the following scopes:
-  - **Build**: Read & Execute
-  - **Code**: Read
-  - **Release**: Read, Write, Execute & Manage
+- Authentication — choose one:
+  - **Microsoft account** *(recommended)* — your organization must be linked to Azure AD and you must be a member of the organization
+  - **Personal Access Token (PAT)** with the following scopes:
+    - **Build**: Read & Execute
+    - **Release**: Read, Write, Execute & Manage
 
 > **Note:** Azure DevOps Server (on-premises) is not supported.
 

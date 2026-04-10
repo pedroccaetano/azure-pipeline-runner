@@ -9,3 +9,15 @@ export function getAxiosInstance(pat: string): AxiosInstance {
     },
   });
 }
+
+export function getBearerAxiosInstance(token: string): AxiosInstance {
+  return axios.create({
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+      // Without this header, Azure DevOps returns 203 + HTML sign-in page
+      // instead of 401 when the token is invalid/not accepted.
+      "X-TFS-FedAuthRedirect": "Suppress",
+    },
+  });
+}

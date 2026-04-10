@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import { AccountData, UserInfo, ConnectionDataResponse } from "../types/account";
-import { getAxiosInstance } from "../utils/api";
+import { getAxiosInstance, getBearerAxiosInstance } from "../utils/api";
 
 const STORAGE_KEY = "azurePipelinesRunner.accounts";
 const ACTIVE_ACCOUNT_KEY = "azurePipelinesRunner.activeAccountId";
@@ -73,6 +73,128 @@ export class AccountManager {
   }
 
   /**
+   * Get a fresh OAuth session for Azure DevOps via VS Code's Microsoft auth provider
+   */
+  private async getOAuthSession(createIfNone: boolean) {
+    // Use silent:true for existing-session retrieval so VS Code refreshes
+    // the token in the background without showing any unexpected UI.
+    // For new account creation use createIfNone:true to trigger the login flow.
+    const options = createIfNone
+      ? { forceNewSession: true as const }
+      : { silent: true as const };
+
+    const session = await vscode.authentication.getSession(
+      'microsoft',
+      ['499b84ac-1321-427f-aa17-267ca6975798/user_impersonation'],
+      options
+    );
+    if (!session) {
+      throw new Error(
+        createIfNone
+          ? 'Sign-in was cancelled.'
+          : 'Microsoft session unavailable. Please remove and re-add the account using "Sign in with Microsoft".'
+      );
+    }
+    return session;
+  }
+
+  async getOAuthToken(createIfNone = false): Promise<string> {
+    return (await this.getOAuthSession(createIfNone)).accessToken;
+  }
+
+  /**
+   * Add a new OAuth account (triggers Microsoft sign-in if needed).
+   * Uses the VS Code session for display name and the Azure DevOps
+   * Profile API for the username/email.
+   */
+  async addOAuthAccount(organization: string, note: string): Promise<AccountData> {
+    const session = await this.getOAuthSession(true);
+    const token = session.accessToken;
+
+    // Validate the organization is reachable and the token has access
+    try {
+      const url = `https://dev.azure.com/${organization}/_apis/projects?api-version=7.1&$top=1`;
+      const response = await getBearerAxiosInstance(token).get(url);
+      // Azure DevOps returns 203 + HTML when the token is not accepted.
+      // With X-TFS-FedAuthRedirect: Suppress it should return 401 instead,
+      // but guard against it just in case.
+      if (typeof response.data === 'string') {
+        throw new Error(
+          'Azure DevOps did not accept the Microsoft token. ' +
+          'Your organization may not support Azure AD authentication, or consent has not been granted. ' +
+          'Try using a Personal Access Token instead.'
+        );
+      }
+    } catch (error: unknown) {
+      const axiosError = error as { response?: { status?: number }; message?: string };
+      if (axiosError.response?.status === 401 || axiosError.response?.status === 203) {
+        throw new Error(
+          'Microsoft account does not have access to this organization. ' +
+          'Ensure your Azure DevOps organization is linked to Azure AD and that you are a member.'
+        );
+      }
+      if (axiosError.response?.status === 404) {
+        throw new Error('Organization not found. Please check the organization name.');
+      }
+      throw error;
+    }
+
+    // Get user info: display name from session, email/alias from Profile API
+    const displayName = session.account.label;
+    let username = session.account.id;
+    try {
+      const profileUrl = 'https://app.vssps.visualstudio.com/_apis/profile/profiles/me?api-version=7.1-preview.1';
+      const profileResponse = await getBearerAxiosInstance(token).get<{ emailAddress?: string; publicAlias?: string }>(profileUrl);
+      username = profileResponse.data.emailAddress || profileResponse.data.publicAlias || username;
+    } catch {
+      // fall back to session account id
+    }
+
+    const accounts = await this.getAccounts();
+
+    const newAccount: AccountData = {
+      id: this.generateId(),
+      organization,
+      authType: 'oauth',
+      note,
+      username,
+      displayName,
+      isActive: accounts.length === 0,
+      createdAt: new Date().toISOString(),
+    };
+
+    accounts.push(newAccount);
+    await this.saveAccounts(accounts);
+
+    if (newAccount.isActive) {
+      await this.context.globalState.update(ACTIVE_ACCOUNT_KEY, newAccount.id);
+    }
+
+    return newAccount;
+  }
+
+  /**
+   * Returns the auth token and type for the active account.
+   * PAT accounts return Basic auth; OAuth accounts return a fresh Bearer token.
+   */
+  async getActiveAccountToken(): Promise<{ token: string; tokenType: 'basic' | 'bearer' }> {
+    const account = await this.getActiveAccount();
+    if (!account) {
+      throw new Error('No active account. Please add an account first.');
+    }
+
+    if ((account.authType ?? 'pat') === 'oauth') {
+      const token = await this.getOAuthToken(false);
+      return { token, tokenType: 'bearer' };
+    }
+
+    if (!account.pat) {
+      throw new Error('Account has no PAT configured.');
+    }
+    return { token: account.pat, tokenType: 'basic' };
+  }
+
+  /**
    * Get all stored accounts
    */
   async getAccounts(): Promise<AccountData[]> {
@@ -108,6 +230,7 @@ export class AccountManager {
     const newAccount: AccountData = {
       id: this.generateId(),
       organization,
+      authType: 'pat',
       pat,
       note,
       username: userInfo.username,

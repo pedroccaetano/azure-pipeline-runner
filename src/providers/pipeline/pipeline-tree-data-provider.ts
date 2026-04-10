@@ -17,19 +17,30 @@ export class PipelineTreeDataProvider
   private totalProjects: number = 0;
   private context?: vscode.ExtensionContext;
   private treeView?: vscode.TreeView<PipelineItem>;
+  private currentAccountId: string = '';
 
   constructor() {}
 
   setContext(context: vscode.ExtensionContext, treeView: vscode.TreeView<PipelineItem>): void {
     this.context = context;
     this.treeView = treeView;
-    
-    // Restore filtered projects from storage
-    const savedFilter = context.globalState.get<string[]>('filteredProjects');
+  }
+
+  loadFilterForAccount(accountId: string): void {
+    this.currentAccountId = accountId;
+    if (!this.context) {
+      return;
+    }
+
+    const savedFilter = this.context.globalState.get<string[]>(`filteredProjects.${accountId}`);
     if (savedFilter && savedFilter.length > 0) {
       this.filteredProjects = new Set(savedFilter);
-      this.updateFilterContext();
+    } else {
+      this.filteredProjects = new Set();
     }
+
+    this.updateFilterContext();
+    this.refresh();
   }
 
   refresh(): void {
@@ -39,12 +50,12 @@ export class PipelineTreeDataProvider
 
   setFilteredProjects(projects: string[]): void {
     this.filteredProjects = new Set(projects);
-    
-    // Persist to storage
-    if (this.context) {
-      this.context.globalState.update('filteredProjects', projects);
+
+    // Persist to storage scoped by account
+    if (this.context && this.currentAccountId) {
+      this.context.globalState.update(`filteredProjects.${this.currentAccountId}`, projects);
     }
-    
+
     this.updateFilterContext();
     this.refresh();
   }
@@ -55,12 +66,12 @@ export class PipelineTreeDataProvider
 
   clearFilter(): void {
     this.filteredProjects.clear();
-    
-    // Clear from storage
-    if (this.context) {
-      this.context.globalState.update('filteredProjects', undefined);
+
+    // Clear from storage scoped by account
+    if (this.context && this.currentAccountId) {
+      this.context.globalState.update(`filteredProjects.${this.currentAccountId}`, undefined);
     }
-    
+
     this.updateFilterContext();
     this.refresh();
   }

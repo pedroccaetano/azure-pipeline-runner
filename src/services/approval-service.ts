@@ -1,4 +1,8 @@
-import { getAxiosInstance } from "../utils/api";
+import { getAxiosInstance, getBearerAxiosInstance } from "../utils/api";
+
+function getAuthenticatedInstance(token: string, tokenType: 'basic' | 'bearer') {
+  return tokenType === 'bearer' ? getBearerAxiosInstance(token) : getAxiosInstance(token);
+}
 import { PendingApprovalsResponse, ApprovalResponse } from "../types/approvals";
 
 const AZURE_DEVOPS_RESOURCE_ID = "499b84ac-1321-427f-aa17-267ca6975798";
@@ -13,9 +17,10 @@ const AZURE_DEVOPS_RESOURCE_ID = "499b84ac-1321-427f-aa17-267ca6975798";
 export async function getPendingApprovals(
   organization: string,
   project: string,
-  pat: string
+  token: string,
+  tokenType: 'basic' | 'bearer' = 'basic'
 ): Promise<PendingApprovalsResponse> {
-  const axiosInstance = getAxiosInstance(pat);
+  const axiosInstance = getAuthenticatedInstance(token, tokenType);
   const url = `https://dev.azure.com/${organization}/${project}/_apis/pipelines/approvals?api-version=7.1-preview.1`;
 
   try {
@@ -44,9 +49,10 @@ export async function approveStage(
   project: string,
   approvalId: string,
   comment: string,
-  pat: string
+  token: string,
+  tokenType: 'basic' | 'bearer' = 'basic'
 ): Promise<ApprovalResponse> {
-  const axiosInstance = getAxiosInstance(pat);
+  const axiosInstance = getAuthenticatedInstance(token, tokenType);
   const url = `https://dev.azure.com/${organization}/${project}/_apis/pipelines/approvals?api-version=7.1-preview.1`;
 
   try {
@@ -90,9 +96,10 @@ export async function rejectStage(
   project: string,
   approvalId: string,
   comment: string,
-  pat: string
+  token: string,
+  tokenType: 'basic' | 'bearer' = 'basic'
 ): Promise<ApprovalResponse> {
-  const axiosInstance = getAxiosInstance(pat);
+  const axiosInstance = getAuthenticatedInstance(token, tokenType);
   const url = `https://dev.azure.com/${organization}/${project}/_apis/pipelines/approvals?api-version=7.1-preview.1`;
 
   try {

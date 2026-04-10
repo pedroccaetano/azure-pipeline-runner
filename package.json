@@ -8,7 +8,7 @@
   },
   "publisher": "PedroCaetano",
   "icon": "resources/icon.png",
-  "version": "0.3.2",
+  "version": "0.4.0",
   "license": "MIT",
   "homepage": "https://github.com/pedroccaetano/azure-pipeline-runner#readme",
   "repository": {
@@ -179,8 +179,8 @@
       },
       {
         "command": "azurePipelinesRunner.addAccount",
-        "title": "Add Account",
-        "icon": "$(add)"
+        "title": "Connect an Azure DevOps Account",
+        "icon": "$(sign-in)"
       },
       {
         "command": "azurePipelinesRunner.switchAccount",
@@ -224,9 +224,14 @@
           "group": "navigation@1"
         },
         {
-          "command": "azurePipelinesRunner.refreshAccounts",
+          "command": "azurePipelinesRunner.addOAuthAccount",
           "when": "view == azurePipelineAccounts",
           "group": "navigation@2"
+        },
+        {
+          "command": "azurePipelinesRunner.refreshAccounts",
+          "when": "view == azurePipelineAccounts",
+          "group": "navigation@3"
         },
         {
           "command": "azurePipelinesRunner.filterPipelines",
@@ -350,7 +355,7 @@
     "viewsWelcome": [
       {
         "view": "azurePipelineAccounts",
-        "contents": "No Azure DevOps accounts connected yet.\n\nConnect your Azure DevOps organization to browse pipelines, builds, and stages directly from VS Code.\n\nGet started:\n\n[Add your first account](command:azurePipelinesRunner.addAccount)\n\n---\n\nRequired PAT scopes:\n\n\u2022 Build \u2014 Read & Execute\n\u2022 Code \u2014 Read\n\u2022 Release \u2014 Read, Write, Execute & Manage\n\n[Learn more](https://github.com/pedroccaetano/azure-pipeline-runner)\n"
+        "contents": "Welcome to Azure Pipelines Runner!\n\nMonitor builds, trigger pipelines, and inspect stages — all without leaving VS Code.\n\n[$(sign-in)Connect an Azure DevOps account](command:azurePipelinesRunner.addAccount)\n\n---\n\nIf you connect with a PAT, make sure it includes these scopes:\n\n\u2022 Build \u2014 Read & Execute\n\u2022 Code \u2014 Read\n\u2022 Release \u2014 Read, Write, Execute & Manage\n\n[$(remote-explorer-documentation)View documentation](https://github.com/pedroccaetano/azure-pipeline-runner?tab=readme-ov-file#getting-started)\n"
       },
       {
         "view": "azurePipelineView",

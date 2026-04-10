@@ -48,10 +48,11 @@ export async function getApprovalIdForStage(
   project: string,
   buildId: number,
   stageId: string,
-  pat: string
+  token: string,
+  tokenType: 'basic' | 'bearer' = 'basic'
 ): Promise<string | undefined> {
   try {
-    const approvalsResponse = await getPendingApprovals(organization, project, pat);
+    const approvalsResponse = await getPendingApprovals(organization, project, token, tokenType);
     
     // Find the approval that matches this stage
     // The approval might not have a direct stage reference, so we'll return the first pending one

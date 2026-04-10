@@ -2,6 +2,11 @@
 
 All notable changes to the "Azure Pipelines Runner" extension will be documented in this file.
 
+## [0.4.0]
+
+- **Microsoft OAuth sign-in** — Accounts can now be connected via "Sign in with Microsoft" (recommended), in addition to Personal Access Token. OAuth uses VS Code's built-in Microsoft auth provider and acquires a Bearer token for all Azure DevOps API calls, avoiding the need to generate and manage PATs manually
+- **Per-account pipeline filter** — The project filter in the Pipelines view is now scoped to each account. Switching accounts loads and persists the correct filter independently, so filtering one account's projects no longer affects others
+
 ## [0.3.2]
 
 - **README enhancements** — Added marketplace badges (version, installs, downloads, rating, license) and screenshots for the Pipelines, Builds, and Stages views

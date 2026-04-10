@@ -11,7 +11,7 @@ import {
   PipelineParameter,
   TemplateParameters,
 } from "../types/types";
-import { getAxiosInstance } from "./api";
+import { getAxiosInstance, getBearerAxiosInstance } from "./api";
 import { BuildTimeline } from "../types/stages";
 import { AccountManager } from "../services/account-manager";
 
@@ -23,31 +23,43 @@ export async function getConfiguration() {
     throw new Error("No active account. Please add an account first.");
   }
 
+  const { token, tokenType } = await accountManager.getActiveAccountToken();
+
   return {
-    pat: activeAccount.pat,
+    token,
+    tokenType,
     organization: activeAccount.organization,
+    // kept for backward compat with any callers that still use `pat`
+    pat: token,
   };
+}
+
+function getAuthenticatedInstance(token: string, tokenType: 'basic' | 'bearer') {
+  return tokenType === 'bearer' ? getBearerAxiosInstance(token) : getAxiosInstance(token);
 }
 
 export async function getProjects(): Promise<Project[]> {
   try {
-    const { pat, organization } = await getConfiguration();
+    const { token, tokenType, organization } = await getConfiguration();
     const url = `https://dev.azure.com/${organization}/_apis/projects?api-version=7.1`;
-    const response = await getAxiosInstance(pat).get<ProjectsResponse>(url);
+    const response = await getAuthenticatedInstance(token, tokenType).get<ProjectsResponse>(url);
     return response.data.value;
   } catch (error) {
-    vscode.window.showErrorMessage(
-      "Error listing projects. Please check if your PAT has the correct permissions."
-    );
+    const msg = error instanceof Error ? error.message : String(error);
+    if (msg.includes('No active account')) {
+      vscode.window.showWarningMessage('No active account. Add an account to get started.');
+    } else {
+      vscode.window.showErrorMessage(`Error listing projects: ${msg}`);
+    }
     return [];
   }
 }
 
 export async function getPipelines(project: string): Promise<Pipeline[]> {
   try {
-    const { pat, organization } = await getConfiguration();
+    const { token, tokenType, organization } = await getConfiguration();
     const url = `https://dev.azure.com/${organization}/${project}/_apis/pipelines?api-version=7.1`;
-    const response = await getAxiosInstance(pat).get<PipelinesResponse>(url);
+    const response = await getAuthenticatedInstance(token, tokenType).get<PipelinesResponse>(url);
 
     if (response?.data?.value.length === 0) {
       vscode.window.showWarningMessage("No pipelines found!");
@@ -56,8 +68,8 @@ export async function getPipelines(project: string): Promise<Pipeline[]> {
 
     return response.data.value;
   } catch (error) {
-    vscode.window.showErrorMessage(
-      "Error listing pipelines. Check if your PAT has the correct permissions."
+    const msg = error instanceof Error ? error.message : String(error);
+    vscode.window.showErrorMessage(`Error listing pipelines: ${msg}`
     );
     return [];
   }
@@ -68,9 +80,9 @@ export async function getBuildsByDefinitionId(
   definitionId: number
 ): Promise<Build[]> {
   try {
-    const { pat, organization } = await getConfiguration();
+    const { token, tokenType, organization } = await getConfiguration();
     const url = `https://dev.azure.com/${organization}/${project}/_apis/build/builds?definitions=${definitionId}&statusFilter=cancelled,completed,inProgress,none,notStarted,postponed&api-version=7.1`;
-    const response = await getAxiosInstance(pat).get<PipelineById>(url);
+    const response = await getAuthenticatedInstance(token, tokenType).get<PipelineById>(url);
     const builds = response.data.value;
 
     return builds;
@@ -87,9 +99,9 @@ export async function getCommitMessage(
   buildId: number
 ): Promise<string> {
   try {
-    const { pat, organization } = await getConfiguration();
+    const { token, tokenType, organization } = await getConfiguration();
     const url = `https://dev.azure.com/${organization}/${project}/_apis/build/builds/${buildId}/changes?api-version=7.1`;
-    const response = await getAxiosInstance(pat).get(url);
+    const response = await getAuthenticatedInstance(token, tokenType).get(url);
     // Return the first change's message (most recent commit)
     if (response.data.value && response.data.value.length > 0) {
       return response.data.value[0].message;
@@ -108,9 +120,9 @@ export async function getRetentionLeases(
   buildId: number
 ): Promise<RetentionLease[]> {
   try {
-    const { pat, organization } = await getConfiguration();
+    const { token, tokenType, organization } = await getConfiguration();
     const url = `https://dev.azure.com/${organization}/${project}/_apis/build/builds/${buildId}/leases?api-version=7.1`;
-    const response = await getAxiosInstance(pat).get<{ value: RetentionLease[] }>(url);
+    const response = await getAuthenticatedInstance(token, tokenType).get<{ value: RetentionLease[] }>(url);
     return response.data.value || [];
   } catch (error) {
     // Silently ignore errors for retention leases - it's not critical
@@ -123,9 +135,9 @@ export async function getBuildStages(
   buildId: number
 ): Promise<BuildTimeline> {
   try {
-    const { pat, organization } = await getConfiguration();
+    const { token, tokenType, organization } = await getConfiguration();
     const url = `https://dev.azure.com/${organization}/${project}/_apis/build/builds/${buildId}/timeline?api-version=7.1`;
-    const response = await getAxiosInstance(pat).get<BuildTimeline>(url);
+    const response = await getAuthenticatedInstance(token, tokenType).get<BuildTimeline>(url);
     return response.data;
   } catch (error) {
     vscode.window.showErrorMessage(
@@ -138,9 +150,9 @@ export async function getBuildStages(
 export async function getStageLog(
   url: string
 ): Promise<{ count: number; value: string[] }> {
-  const { pat } = await getConfiguration();
+  const { token, tokenType } = await getConfiguration();
 
-  const response = await getAxiosInstance(pat).get(url);
+  const response = await getAuthenticatedInstance(token, tokenType).get(url);
 
   return response.data;
 }
@@ -150,9 +162,9 @@ export async function getPipelineConfiguration(
   pipelineId: number
 ): Promise<{ repositoryType: string; repositoryFullName: string } | null> {
   try {
-    const { pat, organization } = await getConfiguration();
+    const { token, tokenType, organization } = await getConfiguration();
     const url = `https://dev.azure.com/${organization}/${project}/_apis/pipelines/${pipelineId}?api-version=7.1`;
-    const response = await getAxiosInstance(pat).get(url);
+    const response = await getAuthenticatedInstance(token, tokenType).get(url);
     
     return {
       repositoryType: response.data.configuration.repository.type,
@@ -233,9 +245,9 @@ export async function getRemoteBranches(
     }
     
     // Default to Azure Repos API
-    const { pat, organization } = await getConfiguration();
+    const { token, tokenType, organization } = await getConfiguration();
     const url = `https://dev.azure.com/${organization}/${project}/_apis/git/repositories/${repositoryId}/refs?filter=heads/&api-version=7.1`;
-    const response = await getAxiosInstance(pat).get(url);
+    const response = await getAuthenticatedInstance(token, tokenType).get(url);
     const branches = response.data.value.map((ref: any) =>
       ref.name.replace("refs/heads/", "")
     );
@@ -255,7 +267,7 @@ export async function runPipeline(
   templateParameters?: TemplateParameters
 ): Promise<Build | null> {
   try {
-    const { pat, organization } = await getConfiguration();
+    const { token, tokenType, organization } = await getConfiguration();
     const url = `https://dev.azure.com/${organization}/${project}/_apis/pipelines/${pipelineId}/runs?api-version=7.1-preview.1`;
     const requestBody: any = {
       resources: {
@@ -272,7 +284,7 @@ export async function runPipeline(
       requestBody.templateParameters = templateParameters;
     }
     
-    const response = await getAxiosInstance(pat).post(url, requestBody);
+    const response = await getAuthenticatedInstance(token, tokenType).post(url, requestBody);
     return response.data;
   } catch (error: any) {
     let errorMessage = "Unknown error";
@@ -295,9 +307,9 @@ export async function deleteBuild(
   buildId: number
 ): Promise<boolean> {
   try {
-    const { pat, organization } = await getConfiguration();
+    const { token, tokenType, organization } = await getConfiguration();
     const url = `https://dev.azure.com/${organization}/${project}/_apis/build/builds/${buildId}?api-version=7.1`;
-    await getAxiosInstance(pat).delete(url);
+    await getAuthenticatedInstance(token, tokenType).delete(url);
     return true;
   } catch (error: any) {
     let errorMessage = "Unknown error";
@@ -322,17 +334,17 @@ export async function retainBuild(
   retain: boolean
 ): Promise<boolean> {
   try {
-    const { pat, organization } = await getConfiguration();
+    const { token, tokenType, organization } = await getConfiguration();
     
     if (retain) {
       // Get current user's connection data to retrieve user ID
       const connectionDataUrl = `https://dev.azure.com/${organization}/_apis/connectionData?api-version=6.0-preview`;
-      const connectionDataResponse = await getAxiosInstance(pat).get(connectionDataUrl);
+      const connectionDataResponse = await getAuthenticatedInstance(token, tokenType).get(connectionDataUrl);
       const userId = connectionDataResponse.data.authenticatedUser.id;
       
       // Create retention lease
       const url = `https://dev.azure.com/${organization}/${project}/_apis/build/retention/leases?api-version=6.0-preview.2`;
-      await getAxiosInstance(pat).post(url, [{
+      await getAuthenticatedInstance(token, tokenType).post(url, [{
         definitionId: definitionId,
         runId: buildId,
         ownerId: `User:${userId}`,
@@ -342,14 +354,14 @@ export async function retainBuild(
     } else {
       // Get leases for this build and delete them
       const listUrl = `https://dev.azure.com/${organization}/${project}/_apis/build/retention/leases?definitionId=${definitionId}&runId=${buildId}&api-version=6.0-preview.2`;
-      const response = await getAxiosInstance(pat).get(listUrl);
+      const response = await getAuthenticatedInstance(token, tokenType).get(listUrl);
       const leases = response.data.value || [];
       
       if (leases.length > 0) {
         // Delete all leases using the ids query parameter
         const leaseIds = leases.map((lease: any) => lease.leaseId).join(',');
         const deleteUrl = `https://dev.azure.com/${organization}/${project}/_apis/build/retention/leases?ids=${leaseIds}&api-version=6.0-preview.2`;
-        await getAxiosInstance(pat).delete(deleteUrl);
+        await getAuthenticatedInstance(token, tokenType).delete(deleteUrl);
       }
     }
     
@@ -375,9 +387,9 @@ export async function cancelBuild(
   buildId: number
 ): Promise<boolean> {
   try {
-    const { pat, organization } = await getConfiguration();
+    const { token, tokenType, organization } = await getConfiguration();
     const url = `https://dev.azure.com/${organization}/${project}/_apis/build/builds/${buildId}?api-version=7.1`;
-    await getAxiosInstance(pat).patch(url, { status: "Cancelling" });
+    await getAuthenticatedInstance(token, tokenType).patch(url, { status: "Cancelling" });
     return true;
   } catch (error: any) {
     let errorMessage = "Unknown error";
@@ -401,9 +413,9 @@ export async function getPipelineRun(
   runId: number
 ): Promise<{ templateParameters?: { [key: string]: string }; resources?: { repositories?: { self?: { refName?: string } } } } | null> {
   try {
-    const { pat, organization } = await getConfiguration();
+    const { token, tokenType, organization } = await getConfiguration();
     const url = `https://dev.azure.com/${organization}/${project}/_apis/pipelines/${pipelineId}/runs/${runId}?api-version=7.1-preview.1`;
-    const response = await getAxiosInstance(pat).get(url);
+    const response = await getAuthenticatedInstance(token, tokenType).get(url);
     return response.data;
   } catch (error) {
     console.error("Error fetching pipeline run:", error);
@@ -416,9 +428,9 @@ export async function getPipelineDefinition(
   pipelineId: number
 ): Promise<PipelineDefinition | null> {
   try {
-    const { pat, organization } = await getConfiguration();
+    const { token, tokenType, organization } = await getConfiguration();
     const url = `https://dev.azure.com/${organization}/${project}/_apis/pipelines/${pipelineId}?api-version=7.1`;
-    const response = await getAxiosInstance(pat).get<PipelineDefinition>(url);
+    const response = await getAuthenticatedInstance(token, tokenType).get<PipelineDefinition>(url);
     return response.data;
   } catch (error) {
     vscode.window.showErrorMessage(
@@ -443,14 +455,14 @@ export async function getPipelineYaml(
     }
     
     // Default to Azure Repos API
-    const { pat, organization } = await getConfiguration();
+    const { token, tokenType, organization } = await getConfiguration();
     // Remove leading slash if present
     const cleanPath = yamlPath.startsWith("/") ? yamlPath.substring(1) : yamlPath;
     const url = `https://dev.azure.com/${organization}/${project}/_apis/git/repositories/${repositoryId}/items?path=${encodeURIComponent(cleanPath)}&versionDescriptor.versionType=branch&versionDescriptor.version=${encodeURIComponent(branch)}&includeContent=true&api-version=7.1`;
     
     console.log("Fetching YAML from URL:", url);
     
-    const response = await getAxiosInstance(pat).get(url);
+    const response = await getAuthenticatedInstance(token, tokenType).get(url);
     
     console.log("YAML response status:", response.status);
     console.log("YAML response data type:", typeof response.data);
@@ -555,9 +567,9 @@ export async function getBuildDetails(
   project: string,
   buildId: number
 ): Promise<Build> {
-  const { pat, organization } = await getConfiguration();
+  const { token, tokenType, organization } = await getConfiguration();
   const url = `https://dev.azure.com/${organization}/${project}/_apis/build/builds/${buildId}?api-version=7.1`;
-  const response = await getAxiosInstance(pat).get<Build>(url);
+  const response = await getAuthenticatedInstance(token, tokenType).get<Build>(url);
   return response.data;
 }
 
@@ -565,9 +577,9 @@ export async function retryBuildFailedJobs(
   project: string,
   buildId: number
 ): Promise<void> {
-  const { pat, organization } = await getConfiguration();
+  const { token, tokenType, organization } = await getConfiguration();
   const url = `https://dev.azure.com/${organization}/${project}/_apis/build/builds/${buildId}?retry=true&api-version=7.1`;
-  await getAxiosInstance(pat).patch(url, {});
+  await getAuthenticatedInstance(token, tokenType).patch(url, {});
 }
 
 export async function retryStage(
@@ -577,9 +589,9 @@ export async function retryStage(
   forceRetryAllJobs: boolean,
   retryDependencies: boolean
 ): Promise<void> {
-  const { pat, organization } = await getConfiguration();
+  const { token, tokenType, organization } = await getConfiguration();
   const url = `https://dev.azure.com/${organization}/${project}/_apis/build/builds/${buildId}/stages/${stageIdentifier}?api-version=7.1`;
-  await getAxiosInstance(pat).patch(url, {
+  await getAuthenticatedInstance(token, tokenType).patch(url, {
     state: 1,
     forceRetryAllJobs: forceRetryAllJobs,
     retryDependencies: retryDependencies,

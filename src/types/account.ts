@@ -10,8 +10,10 @@ export interface AccountData {
   id: string;
   /** Azure DevOps organization name */
   organization: string;
-  /** Personal Access Token (stored encrypted) */
-  pat: string;
+  /** Authentication type: PAT or Microsoft OAuth */
+  authType: 'pat' | 'oauth';
+  /** Personal Access Token (only present for PAT accounts) */
+  pat?: string;
   /** User-defined identifier/note for the account */
   note: string;
   /** Username fetched from Azure DevOps API */

@@ -38,6 +38,13 @@ export async function activate(context: vscode.ExtensionContext) {
   // Initialize pipeline tree data provider context
   pipelineTreeDataProvider.setContext(context, pipelinesTreeView);
 
+  // Load filter for the active account
+  accountManager.getActiveAccount().then(account => {
+    if (account) {
+      pipelineTreeDataProvider.loadFilterForAccount(account.id);
+    }
+  });
+
   // Store tree views in context for later use
   context.subscriptions.push(
     accountsTreeView,
